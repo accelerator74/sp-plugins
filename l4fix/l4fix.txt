@@ -1,0 +1,112 @@
+"Games"
+{
+	"left4dead2"
+	{
+		"Addresses"
+		{
+			"CCharge::HandleCustomCollision"
+			{
+				"signature"	"CCharge::HandleCustomCollision"
+			}
+			"WitchAttack::OnMoveToFailure"
+			{
+				"signature"	"WitchAttack::OnMoveToFailure"
+			}
+			"WitchAttack::GetVictim"
+			{
+				"signature"	"WitchAttack::GetVictim"
+			}
+			"WitchAttack::OnStart"
+			{
+				"signature"	"WitchAttack::OnStart"
+			}
+			"WitchAttack::OnAnimationEvent"
+			{
+				"signature"	"WitchAttack::OnAnimationEvent"
+			}
+			"WitchAttack::Update"
+			{
+				"signature"	"WitchAttack::Update"
+			}
+		}
+		"Offsets"
+		{
+			"CCharge::HandleCustomCollision"
+			{
+				"linux"        "333" //0x01
+				"windows"    "305" //0x01 
+			}
+			"WitchAttack::OnMoveToFailure_1"
+			{
+				"linux"		"19"	//0x74
+				"windows"	"9"		//0x74
+			}
+			"WitchAttack::OnMoveToFailure_2"
+			{
+				"linux"		"24"	//0x75
+				"windows"	"14"	//0x75
+			}
+			"WitchAttack::GetVictim"
+			{
+				"linux"		"12"	//0x74 --> 0xEB
+				"windows"	"6"		//0x75 --> 0x90
+			}
+			"WitchAttack::OnStart"
+			{
+				"windows"	"76"	//0x75 --> 0x90
+			}
+			"WitchAttack::OnAnimationEvent"
+			{
+				"windows"	"17"	//0x75 --> 0x90
+			}
+			"WitchAttack::Update"
+			{
+				"windows"	"60"	//0x75 --> 0x90
+			}
+		}
+		"Signatures"
+		{
+			"CCharge::HandleCustomCollision"
+			{
+				/*Credit silvers sig*/
+				"library"		"server"
+				"linux"			"@_ZN7CCharge21HandleCustomCollisionEP11CBaseEntityRK6VectorS4_P10CGameTraceP9CMoveData"
+				"windows"		"\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x33\x2A\x89\x2A\x2A\x8B\x2A\x2A\x53\x8B\x2A\x89\x2A\x2A\x8B\x2A\x2A\x2A\x2A\x2A\x56\x8B"
+								/* ? ? ? ? ? ? ? ? ? ? ? ? ? ? 33 ? 89 ? ? 8B ? ? 53 8B ? 89 ? ? 8B ? ? ? ? ? 56 8B */
+			}
+			"WitchAttack::OnMoveToFailure"
+			{
+				"library"		"server"
+				"linux"			"@_ZN11WitchAttack15OnMoveToFailureEP8InfectedPK4Path17MoveToFailureType"
+				"windows"		"\x55\x8B\xEC\x8B\x45\x14\x83\xE8\x00"
+								/* 55 8B EC 8B 45 14 83 E8 00 */
+			}
+			"WitchAttack::GetVictim"
+			{
+				/* WitchAttack::OnContact Location in win&nix*/
+				"library"		"server"
+				"linux"			"@_ZNK11WitchAttack9GetVictimEv"
+				"windows"		"\x2A\x2A\x2A\x2A\x2A\x2A\x75\x2A\x8B\x2A\x2A\x83\x2A\x2A\x74\x2A\x8B\x15\x2A\x2A\x2A\x2A\x8B\x2A\x81\xE1\x2A\x2A\x2A\x2A\x03\x2A\x8D\x2A\x2A\x2A\x85\x2A\x74\x2A\xC1\x2A\x2A\x39\x2A\x2A\x75\x2A\x8B\x2A\xC3"
+								/* ? ? ? ? ? ? 75 ? 8B ? ? 83 ? ? 74 ? 8B 15 ? ? ? ? 8B ? 81 E1 ? ? ? ? 03 ? 8D ? ? ? 85 ? 74 ? C1 ? ? 39 ? ? 75 ? 8B ? C3 */
+			}
+			"WitchAttack::OnStart"
+			{
+				"library"		"server"
+				"windows"		"\x2A\x2A\x2A\x2A\x2A\x2A\x8B\x15\x2A\x2A\x2A\x2A\x53\x56\x57\x8B\x2A\x2A\x8B\x87"
+								/* ? ? ? ? ? ? 8B 15 ? ? ? ? 53 56 57 8B ? ? 8B 87 */
+			}
+			"WitchAttack::OnAnimationEvent"
+			{
+				"library"		"server"
+				"windows"		"\x2A\x2A\x2A\x2A\x2A\x2A\x83\x2A\x2A\x75\x2A\x8B\x2A\x2A\x83\x2A\x2A\x75\x2A\x8B\x2A\x2A\x83"
+								/* ? ? ? ? ? ? 83 ? ? 75 ? 8B ? ? 83 ? ? 75 ? 8B ? ? 83 */
+			}
+			"WitchAttack::Update"
+			{
+				"library"		"server"
+				"windows"		"\x2A\x2A\x2A\x2A\x2A\x2A\x53\x56\x57\x8B\x2A\x2A\x8B\x87\x2A\x2A\x2A\x2A\x8B\x90\x2A\x2A\x2A\x2A\x81\xC7"
+								/* ? ? ? ? ? ? 53 56 57 8B ? ? 8B 87 ? ? ? ? 8B 90 ? ? ? ? 81 C7 */
+			}
+		}
+	}
+}
