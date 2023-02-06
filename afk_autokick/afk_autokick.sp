@@ -2,7 +2,6 @@
 #pragma newdecls required
 
 #include <sourcemod>
-#include <vip>
 
 StringMap hUserIdTrie;
 
@@ -57,7 +56,7 @@ public Action TimerCheck(Handle timer)
 					if (hUserIdTrie.GetValue(userid, time))
 					{
 						int specTime = CurTime - time;
-						if (specTime >= (IsPlayerVip(i) ? 720 : 360))
+						if (specTime >= 360)
 						{
 							KickClient(i, "You were AFK for too long (%i sec)", specTime);
 						}
