@@ -1,0 +1,13 @@
+"banreasons"
+{
+	"Abusive"					"Abusive"
+	"Advertisement"				"Advertisement"
+	"Cheating"					"Cheating"
+	"Mic spamming"				"Mic spamming"
+	"Admin disrespect"			"Admin disrespect"
+	"Team killing"				"Team killing"
+	"Unacceptable Spray"		"Unacceptable Spray"
+	"Racism"					"Racism"
+	"Camping"					"Camping"
+	"Breaking Server Rules"		"Breaking Server Rules"
+}

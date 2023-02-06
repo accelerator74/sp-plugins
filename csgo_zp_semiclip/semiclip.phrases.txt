@@ -1,0 +1,18 @@
+"Phrases"
+{
+	"How_Use"
+	{
+		"en"			"Press E (use) to pass through the other players"
+		"ru"			"Нажмите E (использовать) чтобы проходить через других игроков"
+	}
+	"Buy_Use"
+	{
+		"en"			" Attention! You have enabled the buy on button E (use)"
+		"ru"			" Внимание! У вас включена покупка на кнопку E (использовать)"
+	}
+	"Buy_Use_Disable"
+	{
+		"en"			"For a comfortable game it is recommended to disable by entering to the console cl_use_opens_buy_menu 0"
+		"ru"			"Для комфортной игры рекомендуем её отключить, введя в консоль cl_use_opens_buy_menu 0"
+	}
+}

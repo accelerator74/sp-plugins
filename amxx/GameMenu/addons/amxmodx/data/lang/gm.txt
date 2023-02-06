@@ -1,0 +1,9 @@
+[en]
+SETMENUCMD = Say /setmenu or /servers to install our servers in your game menu
+OK = Your game menu changed!
+DEFAULT = Say /resmenu to reset your game menu to default
+
+[ru]
+SETMENUCMD = Say /setmenu или say /servers для установки наших серверов в ваше игровое меню
+OK = Ваше игровое меню изменено!
+DEFAULT = Say /resmenu чтобы вернуть ваше игровое меню в начальное состояние

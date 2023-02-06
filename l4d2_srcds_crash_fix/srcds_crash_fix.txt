@@ -1,0 +1,102 @@
+"Games"
+{
+	"left4dead2"
+	{
+		"Functions"
+		{
+			"CSoundPatch::ChangePitch"
+			{
+				"signature"		"CSoundPatch::ChangePitch"
+				"callconv"		"thiscall"
+				"return"		"int"
+				"this"			"address"
+			}
+			"CSoundControllerImp::SoundChangePitch"
+			{
+				"signature"		"CSoundControllerImp::SoundChangePitch"
+				"callconv"		"thiscall"
+				"return"		"int"
+				"this"			"ignore"
+				"arguments"
+				{
+					"soundpatch"
+					{
+						"type"			"int"
+					}
+				}
+			}
+		}
+		"Addresses"
+		{
+			"StartLagCompensation"
+			{
+				"linux"
+				{
+					"signature"	"LagCompensation"
+				}
+			}
+			"ChaseVictim::Update"
+			{
+				"linux"
+				{
+					"signature"	"ChaseVictim::Update"
+				}
+			}
+			"InfectedFlee::Update"
+			{
+				"linux"
+				{
+					"signature"	"InfectedFlee::Update"
+				}
+			}
+		}
+		"Offsets"
+		{
+			"LagCompensationOffset"
+			{
+				"linux"		"865"
+			}
+			"Patch_ChaseVictim"
+			{
+				"linux"			"1502"
+			}
+			"Patch_InfectedFlee"
+			{
+				"linux"			"301"
+			}
+		}
+		"Signatures"
+		{
+			/* CSoundPatch::ChangePitch(float, float) */
+			"CSoundPatch::ChangePitch"
+			{
+				"library"		"server"
+				"linux"			"@_ZN11CSoundPatch11ChangePitchEff"
+			}
+			/* CSoundControllerImp::SoundChangePitch(CSoundPatch *, float, float) */
+			"CSoundControllerImp::SoundChangePitch"
+			{
+				"library"		"server"
+				"linux"			"@_ZN19CSoundControllerImp16SoundChangePitchEP11CSoundPatchff"
+			}
+			/* CLagCompensationManager::StartLagCompensation(CBasePlayer*, LagCompensationType, Vector const&, QAngle const&, float) */
+			"LagCompensation"
+			{
+				"library"		"server"
+				"linux"			"@_ZN23CLagCompensationManager20StartLagCompensationEP11CBasePlayer19LagCompensationTypeRK6VectorRK6QAnglef"
+			}
+			/* ChaseVictim::Update(ChaseVictim *this, Infected *, float) */
+			"ChaseVictim::Update"
+			{
+				"library"		"server"
+				"linux"			"@_ZN11ChaseVictim6UpdateEP8Infectedf"
+			}
+			/* InfectedFlee::Update(InfectedFlee *this, Infected *, float) */
+			"InfectedFlee::Update"
+			{
+				"library"		"server"
+				"linux"			"@_ZN12InfectedFlee6UpdateEP8Infectedf"
+			}
+		}
+	}
+}
