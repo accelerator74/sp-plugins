@@ -421,8 +421,7 @@ int GetRandomGroup(const int iClass)
 	int nodrop = l4d2_loot_g_chance_nodrop.IntValue;
 	if (nodrop > 0)
 	{
-		int RND = GetRandomInt(1, 100);
-		if (nodrop >= RND)
+		if (nodrop >= 1 + GetURandomInt() % 100)
 		{
 			return 0;
 		}
