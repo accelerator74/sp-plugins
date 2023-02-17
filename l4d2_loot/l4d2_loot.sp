@@ -9,7 +9,7 @@ public Plugin myinfo =
 	name = "[L4D2] Loot of Zombies",
 	author = "Accelerator & Jonny",
 	description = "Plugin drops some items from killed special-infected",
-	version = "2.0",
+	version = "2.1",
 	url = "http://forums.alliedmods.net/showthread.php?t=115763"
 }
 
@@ -445,7 +445,7 @@ int GetRandomGroup(const int iClass)
 			if (Sum > 0)
 			{
 				float X = 100.0 / Sum;
-				float Y = GetRandomFloat(0.0, 100.0);
+				float Y = 100.0 * GetURandomFloat();
 				float A = 0.0;
 				float B = cvar_value_chance[loot_s_chance_health] * X;
 				if (Y >= A && Y < A + B)
@@ -520,7 +520,7 @@ int GetRandomGroup(const int iClass)
 			if (Sum > 0)
 			{
 				float X = 100.0 / Sum;
-				float Y = GetRandomFloat(0.0, 100.0);
+				float Y = 100.0 * GetURandomFloat();
 				float A = 0.0;
 				float B = cvar_value_chance[loot_b_chance_health] * X;
 				if (Y >= A && Y < A + B)
@@ -595,7 +595,7 @@ int GetRandomGroup(const int iClass)
 			if (Sum > 0)
 			{
 				float X = 100.0 / Sum;
-				float Y = GetRandomFloat(0.0, 100.0);
+				float Y = 100.0 * GetURandomFloat();
 				float A = 0.0;
 				float B = cvar_value_chance[loot_h_chance_health] * X;
 				if (Y >= A && Y < A + B)
@@ -670,7 +670,7 @@ int GetRandomGroup(const int iClass)
 			if (Sum > 0)
 			{
 				float X = 100.0 / Sum;
-				float Y = GetRandomFloat(0.0, 100.0);
+				float Y = 100.0 * GetURandomFloat();
 				float A = 0.0;
 				float B = cvar_value_chance[loot_sp_chance_health] * X;
 				if (Y >= A && Y < A + B)
@@ -745,7 +745,7 @@ int GetRandomGroup(const int iClass)
 			if (Sum > 0)
 			{
 				float X = 100.0 / Sum;
-				float Y = GetRandomFloat(0.0, 100.0);
+				float Y = 100.0 * GetURandomFloat();
 				float A = 0.0;
 				float B = cvar_value_chance[loot_j_chance_health] * X;
 				if (Y >= A && Y < A + B)
@@ -820,7 +820,7 @@ int GetRandomGroup(const int iClass)
 			if (Sum > 0)
 			{
 				float X = 100.0 / Sum;
-				float Y = GetRandomFloat(0.0, 100.0);
+				float Y = 100.0 * GetURandomFloat();
 				float A = 0.0;
 				float B = cvar_value_chance[loot_c_chance_health] * X;
 				if (Y >= A && Y < A + B)
@@ -895,7 +895,7 @@ int GetRandomGroup(const int iClass)
 			if (Sum > 0)
 			{
 				float X = 100.0 / Sum;
-				float Y = GetRandomFloat(0.0, 100.0);
+				float Y = 100.0 * GetURandomFloat();
 				float A = 0.0;
 				float B = cvar_value_chance[loot_t_chance_health] * X;
 				if (Y >= A && Y < A + B)
@@ -983,7 +983,7 @@ int GetRandomItem(const int Group)
 			if (Sum > 0)
 			{
 				float X = 100.0 / Sum;
-				float Y = GetRandomFloat(0.0, 100.0);
+				float Y = 100.0 * GetURandomFloat();
 				float A = 0.0;
 				float B = cvar_value_loot[loot_first_aid_kit] * X;
 				if (Y >= A && Y < A + B)
@@ -1034,7 +1034,7 @@ int GetRandomItem(const int Group)
 			if (Sum > 0)
 			{
 				float X = 100.0 / Sum;
-				float Y = GetRandomFloat(0.0, 100.0);
+				float Y = 100.0 * GetURandomFloat();
 				float A = 0.0;
 				float B = cvar_value_loot[loot_cricket_bat] * X;
 				if (Y >= A && Y < A + B)
@@ -1154,7 +1154,7 @@ int GetRandomItem(const int Group)
 			if (Sum > 0)
 			{
 				float X = 100.0 / Sum;
-				float Y = GetRandomFloat(0.0, 100.0);
+				float Y = 100.0 * GetURandomFloat();
 				float A = 0.0;
 				float B = cvar_value_loot[loot_pistol] * X;
 				if (Y >= A && Y < A + B)
@@ -1275,7 +1275,7 @@ int GetRandomItem(const int Group)
 			if (Sum > 0)
 			{
 				float X = 100.0 / Sum;
-				float Y = GetRandomFloat(0.0, 100.0);
+				float Y = 100.0 * GetURandomFloat();
 				float A = 0.0;
 				float B = cvar_value_loot[loot_grenade_launcher] * X;
 				if (Y >= A && Y < A + B)
@@ -1296,7 +1296,7 @@ int GetRandomItem(const int Group)
 			if (Sum > 0)
 			{
 				float X = 100.0 / Sum;
-				float Y = GetRandomFloat(0.0, 100.0);
+				float Y = 100.0 * GetURandomFloat();
 				float A = 0.0;
 				float B = cvar_value_loot[loot_pipe_bomb] * X;
 				if (Y >= A && Y < A + B)
@@ -1328,7 +1328,7 @@ int GetRandomItem(const int Group)
 			if (Sum > 0)
 			{
 				float X = 100.0 / Sum;
-				float Y = GetRandomFloat(0.0, 100.0);
+				float Y = 100.0 * GetURandomFloat();
 				float A = 0.0;
 				float B = cvar_value_loot[loot_upgradepack_exp] * X;
 				if (Y >= A && Y < A + B)
@@ -1356,7 +1356,7 @@ int GetRandomItem(const int Group)
 			if (Sum > 0)
 			{
 				float X = 100.0 / Sum;
-				float Y = GetRandomFloat(0.0, 100.0);
+				float Y = 100.0 * GetURandomFloat();
 				float A = 0.0;
 				float B = cvar_value_loot[loot_fireworkcrate] * X;
 				if (Y >= A && Y < A + B)
@@ -1394,7 +1394,7 @@ int GetRandomItem(const int Group)
 			if (Sum > 0)
 			{
 				float X = 100.0 / Sum;
-				float Y = GetRandomFloat(0.0, 100.0);
+				float Y = 100.0 * GetURandomFloat();
 				float A = 0.0;
 				float B = cvar_value_loot[loot_gnome] * X;
 				if (Y >= A && Y < A + B)
