@@ -1,8 +1,8 @@
 /*
 	SourceMod Anti-Cheat
-	Copyright (C) 2011-2016 SMAC Development Team 
+	Copyright (C) 2011-2016 SMAC Development Team
 	Copyright (C) 2007-2011 CodingDirect LLC
-   
+
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
 	the Free Software Foundation, either version 3 of the License, or
@@ -25,15 +25,15 @@
 #include <sdkhooks>
 
 /* Globals */
-#define SMAC_VERSION	"0.8.7.3"
-#define SMAC_URL		"https://github.com/accelerator74/sp-plugins"
-#define SMAC_AUTHOR		"SMAC Development Team"
-#define MAX_EDICTS		2049
+#define SMAC_VERSION				"0.8.7.3"
+#define SMAC_URL					"https://github.com/accelerator74/sp-plugins"
+#define SMAC_AUTHOR					"SMAC Development Team"
+#define MAX_EDICTS					2049
 
 // Macros
-#define IS_CLIENT(%1)		(1 <= %1 <= MaxClients)
-#define TIME_TO_TICK(%1)	(RoundToNearest((%1) / GetTickInterval()))
-#define TICK_TO_TIME(%1)	((%1) * GetTickInterval())
+#define IS_CLIENT(%1)				(1 <= %1 <= MaxClients)
+#define TIME_TO_TICK(%1)			(RoundToNearest((%1) / GetTickInterval()))
+#define TICK_TO_TIME(%1)			((%1) * GetTickInterval())
 
 // Hud Element hiding flags
 #define HIDEHUD_WEAPONSELECTION		(1 << 0)	// Hide ammo count & weapon selection
@@ -96,7 +96,7 @@ int m_hOwnerEntity = -1;
 int m_isGhost = -1;
 int m_iGlowType = -1;
 int m_isIncapacitated = -1;
-int m_vomitFadeStart = -1;
+int m_vomitStart = -1;
 int m_knockdownReason = -1;
 int m_staggerDist = -1;
 int m_pounceAttacker = -1;
@@ -109,6 +109,10 @@ int m_jockeyAttacker = -1;
 int m_pummelVictim = -1;
 int m_carryVictim = -1;
 int m_jockeyVictim = -1;
+
+/* ConVars */
+ConVar hVomitDurationInfectedBot, hVomitDurationInfectedPz;
+float g_iVomitDurationBot, g_iVomitDurationPz;
 
 /* Plugin Info */
 public Plugin myinfo =
@@ -160,13 +164,15 @@ public void OnPluginStart()
 		{
 			m_isGhost = FindSendPropInfo("CTerrorPlayer", "m_isGhost");
 			m_isIncapacitated = FindSendPropInfo("CTerrorPlayer", "m_isIncapacitated");
-			m_vomitFadeStart = FindSendPropInfo("CTerrorPlayer", "m_vomitFadeStart");
+			m_vomitStart = FindSendPropInfo("CTerrorPlayer", "m_vomitStart");
 			m_knockdownReason = FindSendPropInfo("CTerrorPlayer", "m_knockdownReason");
 			m_staggerDist = FindSendPropInfo("CTerrorPlayer", "m_staggerDist");
 			m_pounceAttacker = FindSendPropInfo("CTerrorPlayer", "m_pounceAttacker");
 			m_tongueOwner = FindSendPropInfo("CTerrorPlayer", "m_tongueOwner");
 			m_pounceVictim = FindSendPropInfo("CTerrorPlayer", "m_pounceVictim");
 			m_tongueVictim = FindSendPropInfo("CTerrorPlayer", "m_tongueVictim");
+
+			g_iVomitDurationBot = g_iVomitDurationPz = 20.0;
 
 			g_hIgnoreSounds.PushString("UI/Pickup_GuitarRiff10.wav");
 		}
@@ -175,7 +181,7 @@ public void OnPluginStart()
 			m_isGhost = FindSendPropInfo("CTerrorPlayer", "m_isGhost");
 			m_iGlowType = FindSendPropInfo("CTerrorPlayer", "m_iGlowType");
 			m_isIncapacitated = FindSendPropInfo("CTerrorPlayer", "m_isIncapacitated");
-			m_vomitFadeStart = FindSendPropInfo("CTerrorPlayer", "m_vomitFadeStart");
+			m_vomitStart = FindSendPropInfo("CTerrorPlayer", "m_vomitStart");
 			m_knockdownReason = FindSendPropInfo("CTerrorPlayer", "m_knockdownReason");
 			m_staggerDist = FindSendPropInfo("CTerrorPlayer", "m_staggerDist");
 			m_pounceAttacker = FindSendPropInfo("CTerrorPlayer", "m_pounceAttacker");
@@ -189,6 +195,12 @@ public void OnPluginStart()
 			m_carryVictim = FindSendPropInfo("CTerrorPlayer", "m_carryVictim");
 			m_jockeyVictim = FindSendPropInfo("CTerrorPlayer", "m_jockeyVictim");
 
+			hVomitDurationInfectedBot = FindConVar("vomitjar_duration_infected_bot");
+			hVomitDurationInfectedBot.AddChangeHook(OnVomitChanged);
+			hVomitDurationInfectedPz = FindConVar("vomitjar_duration_infected_pz");
+			hVomitDurationInfectedPz.AddChangeHook(OnVomitChanged);
+			OnVomitChanged(null, "", "");
+
 			g_hIgnoreSounds.PushString("UI/Pickup_GuitarRiff10.wav");
 		}
 	}
@@ -198,11 +210,11 @@ public void OnPluginStart()
 
 	hCvar = CreateConVar("smac_wallhack", "1", "Enable Anti-Wallhack. This will increase your server's CPU usage.", 0, true, 0.0, true, 1.0);
 	OnSettingsChanged(hCvar, "", "");
-	HookConVarChange(hCvar, OnSettingsChanged);
+	hCvar.AddChangeHook(OnSettingsChanged);
 
 	hCvar = CreateConVar("smac_wallhack_maxtraces", "1280", "Max amount of traces that can be executed in one tick.", 0, true, 1.0);
 	OnMaxTracesChanged(hCvar, "", "");
-	HookConVarChange(hCvar, OnMaxTracesChanged);
+	hCvar.AddChangeHook(OnMaxTracesChanged);
 
 	// Clients use these for prediction. Only change cvars if they aren't in the server's config.
 	g_iTickRate = RoundToFloor(1.0 / GetTickInterval());
@@ -232,7 +244,7 @@ public void OnConfigsExecuted()
 	{
 		return;
 	}
-	
+
 	char sBuffer[PLATFORM_MAX_PATH];
 	int iMaxStrings = GetStringTableNumStrings(g_iDownloadTable);
 
@@ -276,13 +288,13 @@ public void OnClientDisconnect_Post(int client)
 	}
 }
 
-public void Event_PlayerStateChanged(Event event, const char[] name, bool dontBroadcast)
+void Event_PlayerStateChanged(Event event, const char[] name, bool dontBroadcast)
 {
 	// Not all data has been updated at this time. Wait until the next tick to update cache.
 	CreateTimer(0.001, Timer_PlayerStateChanged, event.GetInt("userid"), TIMER_FLAG_NO_MAPCHANGE);
 }
 
-public Action Timer_PlayerStateChanged(Handle timer, any userid)
+Action Timer_PlayerStateChanged(Handle timer, any userid)
 {
 	int client = GetClientOfUserId(userid);
 
@@ -305,7 +317,7 @@ void Wallhack_UpdateClientCache(int client)
 	g_bIgnore[client] = g_bForceIgnore[client] || g_bIsFake[client] || ((g_Game == Engine_Left4Dead || g_Game == Engine_Left4Dead2) && g_iTeam[client] != 2);
 }
 
-public void OnSettingsChanged(ConVar convar, char[] oldValue, char[] newValue)
+void OnSettingsChanged(ConVar convar, char[] oldValue, char[] newValue)
 {
 	bool bNewValue = convar.BoolValue;
 
@@ -319,9 +331,15 @@ public void OnSettingsChanged(ConVar convar, char[] oldValue, char[] newValue)
 	}
 }
 
-public void OnMaxTracesChanged(ConVar convar, char[] oldValue, char[] newValue)
+void OnMaxTracesChanged(ConVar convar, char[] oldValue, char[] newValue)
 {
 	g_iMaxTraces = convar.IntValue;
+}
+
+void OnVomitChanged(ConVar convar, char[] oldValue, char[] newValue)
+{
+	g_iVomitDurationBot = hVomitDurationInfectedBot.FloatValue;
+	g_iVomitDurationPz = hVomitDurationInfectedPz.FloatValue;
 }
 
 void Wallhack_Enable()
@@ -362,7 +380,7 @@ void Wallhack_Enable()
 			Wallhack_UpdateClientCache(i);
 		}
 	}
-	
+
 	int maxEdicts = GetEntityCount();
 	for (int i = MaxClients + 1; i < maxEdicts; i++)
 	{
@@ -388,7 +406,7 @@ void Wallhack_Disable()
 	UnhookEvent("player_spawn", Event_PlayerStateChanged, EventHookMode_Post);
 	UnhookEvent("player_death", Event_PlayerStateChanged, EventHookMode_Post);
 	UnhookEvent("player_team", Event_PlayerStateChanged, EventHookMode_Post);
-	
+
 	switch (g_Game)
 	{
 		case Engine_TF2:
@@ -461,7 +479,7 @@ public void OnEntityDestroyed(int entity)
 	}
 }
 
-public void Hook_WeaponEquipPost(int client, int weapon)
+void Hook_WeaponEquipPost(int client, int weapon)
 {
 	if (weapon > MaxClients && weapon < MAX_EDICTS)
 	{
@@ -470,7 +488,7 @@ public void Hook_WeaponEquipPost(int client, int weapon)
 	}
 }
 
-public void Hook_WeaponDropPost(int client, int weapon)
+void Hook_WeaponDropPost(int client, int weapon)
 {
 	if (weapon > MaxClients && weapon < MAX_EDICTS)
 	{
@@ -479,7 +497,7 @@ public void Hook_WeaponDropPost(int client, int weapon)
 	}
 }
 
-public Action Hook_NormalSound(int clients[MAXPLAYERS], int& numClients, char sample[PLATFORM_MAX_PATH], 
+Action Hook_NormalSound(int clients[MAXPLAYERS], int& numClients, char sample[PLATFORM_MAX_PATH], 
 							int& entity, int& channel, float& volume, int& level, int& pitch, int& flags, 
 							char soundEntry[PLATFORM_MAX_PATH], int& seed)
 {
@@ -488,9 +506,9 @@ public Action Hook_NormalSound(int clients[MAXPLAYERS], int& numClients, char sa
 	{
 		return Plugin_Continue;
 	}
-	
+
 	int iOwner = (entity > MaxClients) ? g_iWeaponOwner[entity] : entity;
-	
+
 	if (!IS_CLIENT(iOwner))
 	{
 		return Plugin_Continue;
@@ -499,7 +517,7 @@ public Action Hook_NormalSound(int clients[MAXPLAYERS], int& numClients, char sa
 	int[] newClients = new int[MaxClients];
 	bool[] bAddClient = new bool[view_as<int>(MaxClients+1)];
 	int newTotal;
-	
+
 	// Check clients that get the sound by default.
 	for (int i = 0; i < numClients; i++)
 	{
@@ -510,7 +528,7 @@ public Action Hook_NormalSound(int clients[MAXPLAYERS], int& numClients, char sa
 		{
 			continue;
 		}
-		
+
 		// These clients need the entity information for prediction.
 		if (g_bIsFake[client] || client == iOwner)
 		{
@@ -558,7 +576,7 @@ public Action Hook_NormalSound(int clients[MAXPLAYERS], int& numClients, char sa
 	return Plugin_Stop;
 }
 
-public void TF2_Hook_FlagEquip(const char[] output, int caller, int activator, float delay)
+void TF2_Hook_FlagEquip(const char[] output, int caller, int activator, float delay)
 {
 	if (caller > MaxClients && caller < MAX_EDICTS && IS_CLIENT(activator) && IsClientConnected(activator))
 	{
@@ -567,7 +585,7 @@ public void TF2_Hook_FlagEquip(const char[] output, int caller, int activator, f
 	}
 }
 
-public void TF2_Hook_FlagDrop(const char[] output, int caller, int activator, float delay)
+void TF2_Hook_FlagDrop(const char[] output, int caller, int activator, float delay)
 {
 	if (caller > MaxClients && caller < MAX_EDICTS)
 	{
@@ -576,9 +594,9 @@ public void TF2_Hook_FlagDrop(const char[] output, int caller, int activator, fl
 	}
 }
 
-public void TF2_Event_Inventory(Event event, const char[] name, bool dontBroadcast)
+void TF2_Event_Inventory(Event event, const char[] name, bool dontBroadcast)
 {
-	int client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int client = GetClientOfUserId(event.GetInt("userid"));
 
 	if (IS_CLIENT(client))
 	{
@@ -594,10 +612,10 @@ public void TF2_Event_Inventory(Event event, const char[] name, bool dontBroadca
 	}
 }
 
-public void L4D_Event_GhostSpawnTime(Event event, const char[] name, bool dontBroadcast)
+void L4D_Event_GhostSpawnTime(Event event, const char[] name, bool dontBroadcast)
 {
 	// There is no event for observer -> ghost mode, so we must count it down ourselves.
-	CreateTimer(GetEventInt(event, "spawntime") + 0.5, Timer_PlayerStateChanged, GetEventInt(event, "userid"), TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(event.GetInt("spawntime") + 0.5, Timer_PlayerStateChanged, GetEventInt(event, "userid"), TIMER_FLAG_NO_MAPCHANGE);
 }
 
 /**
@@ -609,7 +627,7 @@ public void OnGameFrame()
 	{
 		return;
 	}
-	
+
 	g_iTickCount = GetGameTickCount();
 
 	// Increment to next thread.
@@ -649,7 +667,7 @@ public void OnGameFrame()
 	}
 }
 
-public Action Hook_SetTransmit(int entity,int client)
+Action Hook_SetTransmit(int entity,int client)
 {
 	static int iLastChecked[MAXPLAYERS+1][MAXPLAYERS+1];
 
@@ -694,7 +712,7 @@ public Action Hook_SetTransmit(int entity,int client)
 	{
 		// Observers in first-person will clone the visiblity of their target.
 		int iTarget = GetClientObserverTarget(client);
-		
+
 		if (IS_CLIENT(iTarget))
 		{
 			g_bIsVisible[entity][client] = g_bIsVisible[entity][iTarget];
@@ -712,7 +730,7 @@ public Action Hook_SetTransmit(int entity,int client)
 	return g_bIsVisible[entity][client] ? Plugin_Continue : Plugin_Handled;
 }
 
-public Action Hook_SetTransmitWeapon(int entity,int client)
+Action Hook_SetTransmitWeapon(int entity,int client)
 {
 	return g_bIsVisible[g_iWeaponOwner[entity]][client] ? Plugin_Continue : Plugin_Handled;
 }
@@ -723,7 +741,7 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
 	{
 		return Plugin_Continue;
 	}
-	
+
 	g_vEyeAngles[client] = angles;
 	g_iCmdTickCount[client] = tickcount;
 
@@ -739,7 +757,7 @@ void UpdateClientData(int client)
 	{
 		return;
 	}
-	
+
 	iLastCached[client] = g_iTickCount;
 
 	GetClientMins(client, g_vMins[client]);
@@ -755,7 +773,7 @@ void UpdateClientData(int client)
 	// Adjust vectors based on the clients velocity.
 	float vVelocity[3];
 	GetClientAbsVelocity(client, vVelocity);
-	
+
 	if (!IsVectorZero(vVelocity))
 	{
 		// Lag compensation.
@@ -865,26 +883,26 @@ bool IsAbleToSee(int entity,int client)
 		{
 			return true;
 		}
-		
+
 		// Check if weapon tip is visible.
 		if (IsFwdVecVisible(g_vEyePos[client], g_vEyeAngles[entity], g_vEyePos[entity]))
 		{
 			return true;
 		}
-		
+
 		// Check outer 4 corners of player.
 		if (IsRectangleVisible(g_vEyePos[client], g_vAbsCentre[entity], g_vMins[entity], g_vMaxs[entity], 1.30))
 		{
 			return true;
 		}
-		
+
 		// Check inner 4 corners of player.
 		if (IsRectangleVisible(g_vEyePos[client], g_vAbsCentre[entity], g_vMins[entity], g_vMaxs[entity], 0.65))
 		{
 			return true;
 		}
 	}
-	
+
 	return false;
 }
 
@@ -895,16 +913,16 @@ bool IsInFieldOfView(const float start[3], const float angles[3], const float en
 	GetAngleVectors(angles, normal, NULL_VECTOR, NULL_VECTOR);
 	SubtractVectors(end, start, plane);
 	NormalizeVector(plane, plane);
-	
+
 	return GetVectorDotProduct(plane, normal) > 0.0; // Cosine(Deg2Rad(179.9 / 2.0))
 }
 
-public bool Filter_WorldOnly(int entity,int mask)
+bool Filter_WorldOnly(int entity,int mask)
 {
 	return false;
 }
 
-public bool Filter_NoPlayers(int entity,int mask)
+bool Filter_NoPlayers(int entity,int mask)
 {
 	return entity > MaxClients && !IS_CLIENT(GetEntDataEnt2(entity, m_hOwnerEntity));
 }
@@ -920,7 +938,7 @@ bool IsPointVisible(const float start[3], const float end[3])
 	{
 		TR_TraceRayFilter(start, end, MASK_VISIBLE, RayType_EndPoint, Filter_NoPlayers);
 	}
-	
+
 	g_iTraceCount++;
 
 	return TR_GetFraction() == 1.0;
@@ -1090,7 +1108,7 @@ void FarESP_Enable()
 	{
 		return;
 	}
-	
+
 	g_iPlayerSpotted = FindSendPropInfo("CCSPlayerResource", "m_bPlayerSpotted"); //FindSendPropOffs("CCSPlayerResource", "m_bPlayerSpotted");
 	SDKHook(g_iPlayerManager, SDKHook_ThinkPost, PlayerManager_ThinkPost);
 
@@ -1123,11 +1141,11 @@ void FarESP_Disable()
 
 	//UnhookConVarChange(g_hCvarForceCamera, OnForceCameraChanged);
 	g_hCvarForceCamera.RemoveChangeHook(OnForceCameraChanged);
-	
+
 	g_bFarEspEnabled = false;
 }
 
-public Action FarESP_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
+Action FarESP_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 
@@ -1139,9 +1157,9 @@ public Action FarESP_PlayerDeath(Event event, const char[] name, bool dontBroadc
 	return Plugin_Continue;
 }
 
-public void OnForceCameraChanged(ConVar convar, char[] oldValue, char[] newValue)
+void OnForceCameraChanged(ConVar convar, char[] oldValue, char[] newValue)
 {
-	g_bForceCamera = (convar.BoolValue);
+	g_bForceCamera = convar.BoolValue;
 }
 
 public void OnMapStart()
@@ -1160,19 +1178,19 @@ public void OnMapEnd()
 	}
 }
 
-public Action Hook_UpdateRadar(UserMsg msg_id, BfRead msg, const int[] players, int playersNum, bool reliable, bool init)
+Action Hook_UpdateRadar(UserMsg msg_id, BfRead msg, const int[] players, int playersNum, bool reliable, bool init)
 {
 	// We will send custom messages only.
 	return Plugin_Handled;
 }
 
-public void PlayerManager_ThinkPost(int entity)
+void PlayerManager_ThinkPost(int entity)
 {
 	if (!g_bFarEspEnabled)
 	{
 		return;
 	}
-	
+
 	// Keep track of which players have been spotted.
 	for (int i = 1; i <= MaxClients; i++)
 	{
@@ -1244,7 +1262,7 @@ void SendRadarSpotted()
 	{
 		return;
 	}
-	
+
 	float vOrigin[3], vAngles[3];
 	Handle bf = StartMessageEx(g_msgUpdateRadar, iClients, numClients, USERMSG_BLOCKHOOKS);
 
@@ -1287,7 +1305,7 @@ void SendRadarTeam(int team)
 	{
 		return;
 	}
-	
+
 	float vOrigin[3], vAngles[3];
 	int client;
 	Handle bf = StartMessageEx(g_msgUpdateRadar, iClients, numClients, USERMSG_BLOCKHOOKS);
@@ -1297,14 +1315,14 @@ void SendRadarTeam(int team)
 	{
 		numClients = MAX_RADAR_CLIENTS - 1;
 	}
-	
+
 	for (int i = 0; i < numClients; i++)
 	{
 		client = iClients[i];
 
 		GetClientAbsOrigin(client, vOrigin);
 		GetClientAbsAngles(client, vAngles);
-		
+
 		BfWriteByte(bf, client);
 		BfWriteSBitLong(bf, RoundToNearest(vOrigin[0] / 4.0), 13);
 		BfWriteSBitLong(bf, RoundToNearest(vOrigin[1] / 4.0), 13);
@@ -1342,7 +1360,7 @@ void SendRadarFakeTeam(int team)
 	{
 		return;
 	}
-	
+
 	float vOrigin[3];
 	Handle bf = StartMessageEx(g_msgUpdateRadar, iReceivers, numReceivers, USERMSG_BLOCKHOOKS);
 
@@ -1389,12 +1407,12 @@ void SendRadarClient(int client,int flags)
 			iClients[numClients++] = i;
 		}
 	}
-	
+
 	if (!numClients)
 	{
 		return;
 	}
-	
+
 	float vOrigin[3], vAngles[3];
 	Handle bf = StartMessageEx(g_msgUpdateRadar, iClients, numClients, flags);
 
@@ -1454,13 +1472,14 @@ void SendRadarObservers()
 	EndMessage();
 }
 
-stock bool L4D_IsPlayerGhost(int client)
+/* Stocks */
+bool L4D_IsPlayerGhost(int client)
 {
 	return view_as<bool>(GetEntData(client, m_isGhost, 1));
 }
 
 // "Busy" implies that the client is not in their typical first-person state.
-stock bool L4D_IsSurvivorBusy(int client)
+bool L4D_IsSurvivorBusy(int client)
 {
 	return GetEntityFlags(client) & FL_FROZEN || 
 		GetClientHudFlags(client) & ~HIDEHUD_BONUS_PROGRESS || 
@@ -1471,14 +1490,14 @@ stock bool L4D_IsSurvivorBusy(int client)
 		GetEntDataEnt2(client, m_tongueOwner) > 0;
 }
 
-stock bool L4D_IsInfectedBusy(int client)
+bool L4D_IsInfectedBusy(int client)
 {
-	return GetEntDataFloat(client, m_vomitFadeStart) > GetGameTime() || 
+	return (GetEntDataFloat(client, m_vomitStart) + g_iVomitDurationPz + 0.1) > GetGameTime() || 
 		GetEntDataEnt2(client, m_pounceVictim) > 0 || 
 		GetEntDataEnt2(client, m_tongueVictim) > 0;
 }
 
-stock bool L4D2_IsSurvivorBusy(int client)
+bool L4D2_IsSurvivorBusy(int client)
 {
 	return GetEntityFlags(client) & FL_FROZEN || 
 		GetClientHudFlags(client) & ~HIDEHUD_BONUS_PROGRESS || 
@@ -1492,10 +1511,10 @@ stock bool L4D2_IsSurvivorBusy(int client)
 		GetEntDataEnt2(client, m_tongueOwner) > 0;
 }
 
-stock bool L4D2_IsInfectedBusy(int client)
+bool L4D2_IsInfectedBusy(int client)
 {
 	return GetEntData(client, m_iGlowType) == 3 || 
-		GetEntDataFloat(client, m_vomitFadeStart) > GetGameTime() || 
+		(GetEntDataFloat(client, m_vomitStart) + (IsFakeClient(client) ? g_iVomitDurationBot : g_iVomitDurationPz) + 0.1) > GetGameTime() || 
 		GetEntDataEnt2(client, m_pummelVictim) > 0 || 
 		GetEntDataEnt2(client, m_carryVictim) > 0 || 
 		GetEntDataEnt2(client, m_pounceVictim) > 0 || 
@@ -1503,7 +1522,7 @@ stock bool L4D2_IsInfectedBusy(int client)
 		GetEntDataEnt2(client, m_tongueVictim) > 0;
 }
 
-stock bool IsConVarDefault(ConVar convar)
+bool IsConVarDefault(ConVar convar)
 {
 	char sDefaultVal[16], sCurrentVal[16];
 	GetConVarDefault(convar, sDefaultVal, sizeof(sDefaultVal));
@@ -1512,12 +1531,12 @@ stock bool IsConVarDefault(ConVar convar)
 	return StrEqual(sDefaultVal, sCurrentVal);
 }
 
-stock bool IsVectorZero(const float vec[3])
+bool IsVectorZero(const float vec[3])
 {
 	return vec[0] == 0.0 && vec[1] == 0.0 && vec[2] == 0.0;
 }
 
-stock int GetClientObserverMode(int client)
+int GetClientObserverMode(int client)
 {
 	static int offset = -1;
 
@@ -1529,7 +1548,7 @@ stock int GetClientObserverMode(int client)
 	return GetEntData(client, offset);
 }
 
-stock int GetClientObserverTarget(int client)
+int GetClientObserverTarget(int client)
 {
 	static int offset = -1;
 
@@ -1541,17 +1560,17 @@ stock int GetClientObserverTarget(int client)
 	return GetEntDataEnt2(client, offset);
 }
 
-stock int GetClientHudFlags(int client)
+int GetClientHudFlags(int client)
 {
 	return GetEntData(client, m_iHideHUD);
 }
 
-stock float MT_GetRandomFloat(float min, float max)
+float MT_GetRandomFloat(float min, float max)
 {
 	return GetURandomFloat() * (max - min) + min;
 }
 
-stock bool GetClientAbsVelocity(int client, float velocity[3])
+bool GetClientAbsVelocity(int client, float velocity[3])
 {
 	static int offset = -1;
 
@@ -1565,12 +1584,12 @@ stock bool GetClientAbsVelocity(int client, float velocity[3])
 	return true;
 }
 
-stock void ZeroVector(float vec[3])
+void ZeroVector(float vec[3])
 {
 	vec[0] = vec[1] = vec[2] = 0.0;
 }
 
-stock void BfWriteSBitLong(Handle bf,int data,int numBits)
+void BfWriteSBitLong(Handle bf,int data,int numBits)
 {
 	for (int i = 0; i < numBits; i++)
 	{
@@ -1578,17 +1597,17 @@ stock void BfWriteSBitLong(Handle bf,int data,int numBits)
 	}
 }
 
-stock any MinValue(any value, any min)
+any MinValue(any value, any min)
 {
 	return (value < min) ? min : value;
 }
 
-stock any MaxValue(any value, any max)
+any MaxValue(any value, any max)
 {
 	return (value > max) ? max : value;
 }
 
-stock any ClampValue(any value, any min, any max)
+any ClampValue(any value, any min, any max)
 {
 	value = MinValue(value, min);
 	value = MaxValue(value, max);
