@@ -635,7 +635,7 @@ void TF2_Event_Inventory(Event event, const char[] name, bool dontBroadcast)
 void L4D_Event_GhostSpawnTime(Event event, const char[] name, bool dontBroadcast)
 {
 	// There is no event for observer -> ghost mode, so we must count it down ourselves.
-	CreateTimer(event.GetInt("spawntime") + 0.5, Timer_PlayerStateChanged, GetEventInt(event, "userid"), TIMER_FLAG_NO_MAPCHANGE);
+	CreateTimer(event.GetInt("spawntime") + 0.5, Timer_PlayerStateChanged, event.GetInt("userid"), TIMER_FLAG_NO_MAPCHANGE);
 }
 
 /**
