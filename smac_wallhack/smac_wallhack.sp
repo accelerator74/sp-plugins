@@ -29,6 +29,8 @@
 #define SMAC_URL					"https://github.com/accelerator74/sp-plugins"
 #define SMAC_AUTHOR					"SMAC Development Team"
 #define MAX_EDICTS					2049
+#define SOUNDS_CHECK
+#define ESP_BLOCKING
 
 // Macros
 #define IS_CLIENT(%1)				(1 <= %1 <= MaxClients)
@@ -63,14 +65,22 @@ enum {
 
 EngineVersion g_Game = Engine_Unknown;
 
+#if defined ESP_BLOCKING
 bool g_bEnabled, g_bFarEspEnabled;
+#else
+bool g_bEnabled;
+#endif
 int g_iMaxTraces;
 
+#if defined SOUNDS_CHECK
 int g_iDownloadTable = INVALID_STRING_TABLE;
 ArrayList g_hIgnoreSounds;
+#endif
 
 int g_iPVSCache[MAXPLAYERS+1][MAXPLAYERS+1];
+#if defined SOUNDS_CHECK
 int g_iPVSSoundCache[MAXPLAYERS+1][MAXPLAYERS+1];
+#endif
 bool g_bIsVisible[MAXPLAYERS+1][MAXPLAYERS+1];
 bool g_bIsObserver[MAXPLAYERS+1];
 bool g_bIsFake[MAXPLAYERS+1];
@@ -139,7 +149,9 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 public void OnPluginStart()
 {
 	// Initialize.
+#if defined SOUNDS_CHECK
 	g_iDownloadTable = FindStringTable("downloadables");
+#endif
 	g_iCacheTicks = TIME_TO_TICK(0.75);
 
 	for (int i = 0; i < sizeof(g_bIsVisible); i++)
@@ -152,12 +164,12 @@ public void OnPluginStart()
 
 	m_iHideHUD = FindSendPropInfo("CBasePlayer", "m_iHideHUD");
 	m_hOwnerEntity = FindSendPropInfo("CBaseEntity", "m_hOwnerEntity");
-
+#if defined SOUNDS_CHECK
 	// Default sounds to ignore in sound hook.
 	g_hIgnoreSounds = new ArrayList(ByteCountToCells(256));
 	g_hIgnoreSounds.PushString("buttons/button14.wav");
 	g_hIgnoreSounds.PushString("buttons/combine_button7.wav");
-
+#endif
 	switch (g_Game)
 	{
 		case Engine_Left4Dead:
@@ -173,8 +185,9 @@ public void OnPluginStart()
 			m_tongueVictim = FindSendPropInfo("CTerrorPlayer", "m_tongueVictim");
 
 			g_iVomitDurationBot = g_iVomitDurationPz = 20.0;
-
+#if defined SOUNDS_CHECK
 			g_hIgnoreSounds.PushString("UI/Pickup_GuitarRiff10.wav");
+#endif
 		}
 		case Engine_Left4Dead2:
 		{
@@ -200,8 +213,9 @@ public void OnPluginStart()
 			hVomitDurationInfectedPz = FindConVar("vomitjar_duration_infected_pz");
 			hVomitDurationInfectedPz.AddChangeHook(OnVomitChanged);
 			OnVomitChanged(null, "", "");
-
+#if defined SOUNDS_CHECK
 			g_hIgnoreSounds.PushString("UI/Pickup_GuitarRiff10.wav");
+#endif
 		}
 	}
 
@@ -236,7 +250,7 @@ public void OnPluginStart()
 		SetConVarInt(hCvar, 1);
 	}
 }
-
+#if defined SOUNDS_CHECK
 public void OnConfigsExecuted()
 {
 	// Ignore all sounds in the download table.
@@ -258,7 +272,7 @@ public void OnConfigsExecuted()
 		}
 	}
 }
-
+#endif
 public void OnClientPutInServer(int client)
 {
 	if (g_bEnabled)
@@ -283,7 +297,9 @@ public void OnClientDisconnect_Post(int client)
 	for (int i = 0; i < sizeof(g_iPVSCache); i++)
 	{
 		g_iPVSCache[i][client] = 0;
+#if defined SOUNDS_CHECK
 		g_iPVSSoundCache[i][client] = 0;
+#endif
 		g_bIsVisible[i][client] = true;
 	}
 }
@@ -345,9 +361,9 @@ void OnVomitChanged(ConVar convar, char[] oldValue, char[] newValue)
 void Wallhack_Enable()
 {
 	g_bEnabled = true;
-
+#if defined SOUNDS_CHECK
 	AddNormalSoundHook(Hook_NormalSound);
-
+#endif
 	HookEvent("player_spawn", Event_PlayerStateChanged, EventHookMode_Post);
 	HookEvent("player_death", Event_PlayerStateChanged, EventHookMode_Post);
 	HookEvent("player_team", Event_PlayerStateChanged, EventHookMode_Post);
@@ -361,10 +377,12 @@ void Wallhack_Enable()
 			HookEntityOutput("item_teamflag", "OnReturn", TF2_Hook_FlagDrop);
 			HookEvent("post_inventory_application", TF2_Event_Inventory, EventHookMode_Post);
 		}
+#if defined ESP_BLOCKING
 		case Engine_CSS:
 		{
 			FarESP_Enable();
 		}
+#endif
 		case Engine_Left4Dead, Engine_Left4Dead2:
 		{
 			HookEvent("player_first_spawn", Event_PlayerStateChanged, EventHookMode_Post);
@@ -400,9 +418,9 @@ void Wallhack_Enable()
 void Wallhack_Disable()
 {
 	g_bEnabled = false;
-
+#if defined SOUNDS_CHECK
 	RemoveNormalSoundHook(Hook_NormalSound);
-
+#endif
 	UnhookEvent("player_spawn", Event_PlayerStateChanged, EventHookMode_Post);
 	UnhookEvent("player_death", Event_PlayerStateChanged, EventHookMode_Post);
 	UnhookEvent("player_team", Event_PlayerStateChanged, EventHookMode_Post);
@@ -416,10 +434,12 @@ void Wallhack_Disable()
 			UnhookEntityOutput("item_teamflag", "OnReturn", TF2_Hook_FlagDrop);
 			UnhookEvent("post_inventory_application", TF2_Event_Inventory, EventHookMode_Post);
 		}
+#if defined ESP_BLOCKING
 		case Engine_CSS:
 		{
 			FarESP_Disable();
 		}
+#endif
 		case Engine_Left4Dead, Engine_Left4Dead2:
 		{
 			UnhookEvent("player_first_spawn", Event_PlayerStateChanged, EventHookMode_Post);
@@ -496,7 +516,7 @@ void Hook_WeaponDropPost(int client, int weapon)
 		SDKUnhook(weapon, SDKHook_SetTransmit, Hook_SetTransmitWeapon);
 	}
 }
-
+#if defined SOUNDS_CHECK
 Action Hook_NormalSound(int clients[MAXPLAYERS], int& numClients, char sample[PLATFORM_MAX_PATH], 
 							int& entity, int& channel, float& volume, int& level, int& pitch, int& flags, 
 							char soundEntry[PLATFORM_MAX_PATH], int& seed)
@@ -575,7 +595,7 @@ Action Hook_NormalSound(int clients[MAXPLAYERS], int& numClients, char sample[PL
 
 	return Plugin_Stop;
 }
-
+#endif
 void TF2_Hook_FlagEquip(const char[] output, int caller, int activator, float delay)
 {
 	if (caller > MaxClients && caller < MAX_EDICTS && IS_CLIENT(activator) && IsClientConnected(activator))
@@ -660,20 +680,21 @@ public void OnGameFrame()
 			g_iTraceCount = 0;
 		}
 	}
-
+#if defined ESP_BLOCKING
 	if (g_bFarEspEnabled)
 	{
 		FarESP_OnGameFrame();
 	}
+#endif
 }
 
 Action Hook_SetTransmit(int entity,int client)
 {
 	static int iLastChecked[MAXPLAYERS+1][MAXPLAYERS+1];
-
+#if defined SOUNDS_CHECK
 	// Cache PVS for sound hook.
 	g_iPVSSoundCache[entity][client] = g_iTickCount + g_iCacheTicks;
-
+#endif
 	// Data is transmitted multiple times per tick. Only run calculations once.
 	if (iLastChecked[entity][client] == g_iTickCount)
 	{
@@ -1079,7 +1100,7 @@ bool IsRectangleVisible(const float start[3], const float end[3], const float mi
 
 	return false;
 }
-
+#if defined ESP_BLOCKING
 /**
  * CS:S FarESP Blocking
  */
@@ -1472,6 +1493,19 @@ void SendRadarObservers()
 	EndMessage();
 }
 
+float MT_GetRandomFloat(float min, float max)
+{
+	return GetURandomFloat() * (max - min) + min;
+}
+
+void BfWriteSBitLong(Handle bf,int data,int numBits)
+{
+	for (int i = 0; i < numBits; i++)
+	{
+		BfWriteBool(bf, !!(data & (1 << i)));
+	}
+}
+#endif
 /* Stocks */
 bool L4D_IsPlayerGhost(int client)
 {
@@ -1565,11 +1599,6 @@ int GetClientHudFlags(int client)
 	return GetEntData(client, m_iHideHUD);
 }
 
-float MT_GetRandomFloat(float min, float max)
-{
-	return GetURandomFloat() * (max - min) + min;
-}
-
 bool GetClientAbsVelocity(int client, float velocity[3])
 {
 	static int offset = -1;
@@ -1587,14 +1616,6 @@ bool GetClientAbsVelocity(int client, float velocity[3])
 void ZeroVector(float vec[3])
 {
 	vec[0] = vec[1] = vec[2] = 0.0;
-}
-
-void BfWriteSBitLong(Handle bf,int data,int numBits)
-{
-	for (int i = 0; i < numBits; i++)
-	{
-		BfWriteBool(bf, !!(data & (1 << i)));
-	}
 }
 
 any MinValue(any value, any min)
