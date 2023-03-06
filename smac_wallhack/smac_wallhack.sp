@@ -74,6 +74,7 @@ int g_iMaxTraces;
 float g_fMaxUnlag;
 
 #if defined SOUNDS_CHECK
+int m_vecAbsOrigin;
 int g_iDownloadTable = INVALID_STRING_TABLE;
 ArrayList g_hIgnoreSounds;
 #endif
@@ -256,6 +257,19 @@ public void OnPluginStart()
 	{
 		SetConVarInt(hCvar, 1);
 	}
+}
+
+public void OnMapStart()
+{
+#if defined SOUNDS_CHECK
+	m_vecAbsOrigin = FindDataMapInfo(0, "m_vecAbsOrigin");
+#endif
+#if defined ESP_BLOCKING
+	if (g_bEnabled && !g_bFarEspEnabled && g_Game == Engine_CSS)
+	{
+		FarESP_Enable();
+	}
+#endif
 }
 #if defined SOUNDS_CHECK
 public void OnConfigsExecuted()
@@ -607,7 +621,7 @@ Action Hook_NormalSound(int clients[MAXPLAYERS], int& numClients, char sample[PL
 	if (newTotal)
 	{
 		float vOrigin[3];
-		GetEntPropVector(entity, Prop_Data, "m_vecAbsOrigin", vOrigin);
+		GetEntDataVector(entity, m_vecAbsOrigin, vOrigin);
 		EmitSound(newClients, newTotal, sample, SOUND_FROM_WORLD, channel, level, flags, volume, pitch, _, vOrigin);
 	}
 
@@ -1203,14 +1217,6 @@ Action FarESP_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 void OnForceCameraChanged(ConVar convar, char[] oldValue, char[] newValue)
 {
 	g_bForceCamera = convar.BoolValue;
-}
-
-public void OnMapStart()
-{
-	if (g_bEnabled && !g_bFarEspEnabled && g_Game == Engine_CSS)
-	{
-		FarESP_Enable();
-	}
 }
 
 public void OnMapEnd()
