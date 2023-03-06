@@ -95,6 +95,7 @@ float g_vMaxs[MAXPLAYERS+1][3];
 float g_vAbsCentre[MAXPLAYERS+1][3];
 float g_vEyePos[MAXPLAYERS+1][3];
 float g_vEyeAngles[MAXPLAYERS+1][3];
+float g_fAbilityStart[MAXPLAYERS+1];
 
 int g_iTotalThreads = 1, g_iCurrentThread = 1, g_iThread[MAXPLAYERS+1] = { 1, ... };
 int g_iCacheTicks, g_iTraceCount;
@@ -387,6 +388,7 @@ void Wallhack_Enable()
 		{
 			HookEvent("player_first_spawn", Event_PlayerStateChanged, EventHookMode_Post);
 			HookEvent("ghost_spawn_time", L4D_Event_GhostSpawnTime, EventHookMode_Post);
+			HookEvent("ability_use", L4D_Event_Ability_Use, EventHookMode_Post);
 		}
 	}
 
@@ -444,6 +446,7 @@ void Wallhack_Disable()
 		{
 			UnhookEvent("player_first_spawn", Event_PlayerStateChanged, EventHookMode_Post);
 			UnhookEvent("ghost_spawn_time", L4D_Event_GhostSpawnTime, EventHookMode_Post);
+			UnhookEvent("ability_use", L4D_Event_Ability_Use, EventHookMode_Post);
 		}
 	}
 
@@ -636,6 +639,11 @@ void L4D_Event_GhostSpawnTime(Event event, const char[] name, bool dontBroadcast
 {
 	// There is no event for observer -> ghost mode, so we must count it down ourselves.
 	CreateTimer(event.GetInt("spawntime") + 0.5, Timer_PlayerStateChanged, event.GetInt("userid"), TIMER_FLAG_NO_MAPCHANGE);
+}
+
+void L4D_Event_Ability_Use(Event event, const char[] name, bool dontBroadcast)
+{
+	g_fAbilityStart[GetClientOfUserId(event.GetInt("userid"))] = GetGameTime();
 }
 
 /**
@@ -1526,7 +1534,9 @@ bool L4D_IsSurvivorBusy(int client)
 
 bool L4D_IsInfectedBusy(int client)
 {
-	return (GetEntDataFloat(client, m_vomitStart) + g_iVomitDurationPz + 0.1) > GetGameTime() || 
+	float gt = GetGameTime();
+	return (GetEntDataFloat(client, m_vomitStart) + g_iVomitDurationPz + 0.1) > gt || 
+		g_fAbilityStart[client] + 5.0 > gt || 
 		GetEntDataEnt2(client, m_pounceVictim) > 0 || 
 		GetEntDataEnt2(client, m_tongueVictim) > 0;
 }
@@ -1547,8 +1557,10 @@ bool L4D2_IsSurvivorBusy(int client)
 
 bool L4D2_IsInfectedBusy(int client)
 {
+	float gt = GetGameTime();
 	return GetEntData(client, m_iGlowType) == 3 || 
-		(GetEntDataFloat(client, m_vomitStart) + (IsFakeClient(client) ? g_iVomitDurationBot : g_iVomitDurationPz) + 0.1) > GetGameTime() || 
+		(GetEntDataFloat(client, m_vomitStart) + (IsFakeClient(client) ? g_iVomitDurationBot : g_iVomitDurationPz) + 0.1) > gt || 
+		g_fAbilityStart[client] + 5.0 > gt || 
 		GetEntDataEnt2(client, m_pummelVictim) > 0 || 
 		GetEntDataEnt2(client, m_carryVictim) > 0 || 
 		GetEntDataEnt2(client, m_pounceVictim) > 0 || 
