@@ -171,6 +171,7 @@ public void OnPluginStart()
 		if (IsClientInGame(i))
 		{
 			m_fLerpTime = FindDataMapInfo(i, "m_fLerpTime");
+			break;
 		}
 	}
 	m_iHideHUD = FindSendPropInfo("CBasePlayer", "m_iHideHUD");
