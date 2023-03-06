@@ -71,6 +71,7 @@ bool g_bEnabled, g_bFarEspEnabled;
 bool g_bEnabled;
 #endif
 int g_iMaxTraces;
+float g_fMaxUnlag;
 
 #if defined SOUNDS_CHECK
 int g_iDownloadTable = INVALID_STRING_TABLE;
@@ -102,6 +103,7 @@ int g_iCacheTicks, g_iTraceCount;
 int g_iTickCount, g_iCmdTickCount[MAXPLAYERS+1], g_iTickRate;
 
 /* Offsets */
+int m_fLerpTime = -1;
 int m_iHideHUD = -1;
 int m_hOwnerEntity = -1;
 int m_isGhost = -1;
@@ -231,6 +233,10 @@ public void OnPluginStart()
 	OnMaxTracesChanged(hCvar, "", "");
 	hCvar.AddChangeHook(OnMaxTracesChanged);
 
+	hCvar = FindConVar("sv_maxunlag");
+	OnMaxUnlagChanged(hCvar, "", "");
+	hCvar.AddChangeHook(OnMaxUnlagChanged);
+
 	// Clients use these for prediction. Only change cvars if they aren't in the server's config.
 	g_iTickRate = RoundToFloor(1.0 / GetTickInterval());
 
@@ -276,6 +282,10 @@ public void OnConfigsExecuted()
 #endif
 public void OnClientPutInServer(int client)
 {
+	if (m_fLerpTime == -1)
+	{
+		m_fLerpTime = FindDataMapInfo(client, "m_fLerpTime");
+	}
 	if (g_bEnabled)
 	{
 		Wallhack_Hook(client);
@@ -351,6 +361,11 @@ void OnSettingsChanged(ConVar convar, char[] oldValue, char[] newValue)
 void OnMaxTracesChanged(ConVar convar, char[] oldValue, char[] newValue)
 {
 	g_iMaxTraces = convar.IntValue;
+}
+
+void OnMaxUnlagChanged(ConVar convar, char[] oldValue, char[] newValue)
+{
+	g_fMaxUnlag = convar.FloatValue;
 }
 
 void OnVomitChanged(ConVar convar, char[] oldValue, char[] newValue)
@@ -816,11 +831,10 @@ void UpdateClientData(int client)
 		{
 			// Based on CLagCompensationManager::StartLagCompensation.
 			float fCorrect = GetClientLatency(client, NetFlow_Outgoing);
-			int iLerpTicks = TIME_TO_TICK(GetEntPropFloat(client, Prop_Data, "m_fLerpTime"));
+			int iLerpTicks = TIME_TO_TICK(GetEntDataFloat(client, m_fLerpTime));
 
-			// Assume sv_maxunlag == 1.0f seconds.
 			fCorrect += TICK_TO_TIME(iLerpTicks);
-			fCorrect = ClampValue(fCorrect, 0.0, 1.0);
+			fCorrect = ClampValue(fCorrect, 0.0, g_fMaxUnlag);
 
 			iTargetTick = g_iCmdTickCount[client] - iLerpTicks;
 
