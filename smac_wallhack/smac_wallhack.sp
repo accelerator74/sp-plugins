@@ -388,7 +388,7 @@ void Wallhack_Enable()
 		{
 			HookEvent("player_first_spawn", Event_PlayerStateChanged, EventHookMode_Post);
 			HookEvent("ghost_spawn_time", L4D_Event_GhostSpawnTime, EventHookMode_Post);
-			HookEvent("ability_use", L4D_Event_Ability_Use, EventHookMode_Post);
+			HookEvent("ability_use", L4D_Event_AbilityUse, EventHookMode_Post);
 		}
 	}
 
@@ -446,7 +446,7 @@ void Wallhack_Disable()
 		{
 			UnhookEvent("player_first_spawn", Event_PlayerStateChanged, EventHookMode_Post);
 			UnhookEvent("ghost_spawn_time", L4D_Event_GhostSpawnTime, EventHookMode_Post);
-			UnhookEvent("ability_use", L4D_Event_Ability_Use, EventHookMode_Post);
+			UnhookEvent("ability_use", L4D_Event_AbilityUse, EventHookMode_Post);
 		}
 	}
 
@@ -641,7 +641,7 @@ void L4D_Event_GhostSpawnTime(Event event, const char[] name, bool dontBroadcast
 	CreateTimer(event.GetInt("spawntime") + 0.5, Timer_PlayerStateChanged, event.GetInt("userid"), TIMER_FLAG_NO_MAPCHANGE);
 }
 
-void L4D_Event_Ability_Use(Event event, const char[] name, bool dontBroadcast)
+void L4D_Event_AbilityUse(Event event, const char[] name, bool dontBroadcast)
 {
 	g_fAbilityStart[GetClientOfUserId(event.GetInt("userid"))] = GetGameTime();
 }
