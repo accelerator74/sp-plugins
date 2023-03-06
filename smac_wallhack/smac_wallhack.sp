@@ -27,7 +27,7 @@
 /* Globals */
 #define SMAC_VERSION				"0.8.7.3"
 #define SMAC_URL					"https://github.com/accelerator74/sp-plugins"
-#define SMAC_AUTHOR					"SMAC Development Team"
+#define SMAC_AUTHOR					"SMAC Development Team & Accelerator"
 #define MAX_EDICTS					2049
 #define SOUNDS_CHECK
 #define ESP_BLOCKING
@@ -166,6 +166,13 @@ public void OnPluginStart()
 		}
 	}
 
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientInGame(i))
+		{
+			m_fLerpTime = FindDataMapInfo(i, "m_fLerpTime");
+		}
+	}
 	m_iHideHUD = FindSendPropInfo("CBasePlayer", "m_iHideHUD");
 	m_hOwnerEntity = FindSendPropInfo("CBaseEntity", "m_hOwnerEntity");
 #if defined SOUNDS_CHECK
