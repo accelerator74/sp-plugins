@@ -438,8 +438,7 @@ void Wallhack_Enable()
 		}
 	}
 
-	int maxEdicts = GetEntityCount();
-	for (int i = MaxClients + 1; i < maxEdicts; i++)
+	for (int i = MaxClients + 1; i < MAX_EDICTS; i++)
 	{
 		if (IsValidEdict(i))
 		{
@@ -495,8 +494,7 @@ void Wallhack_Disable()
 		}
 	}
 
-	int maxEdicts = GetEntityCount();
-	for (int i = MaxClients + 1; i < maxEdicts; i++)
+	for (int i = MaxClients + 1; i < MAX_EDICTS; i++)
 	{
 		if (g_iWeaponOwner[i])
 		{
@@ -660,8 +658,7 @@ void TF2_Event_Inventory(Event event, const char[] name, bool dontBroadcast)
 
 	if (IS_CLIENT(client))
 	{
-		int maxEdicts = GetEntityCount();
-		for (int i = MaxClients + 1; i < maxEdicts; i++)
+		for (int i = MaxClients + 1; i < MAX_EDICTS; i++)
 		{
 			if (IsValidEdict(i) && GetEntDataEnt2(i, m_hOwnerEntity) == client)
 			{
