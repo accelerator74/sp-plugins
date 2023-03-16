@@ -563,12 +563,7 @@ int GetAdmin(int client, char[] buffer, int maxlen)
 
 int GetTimeInMinutes(int time)
 {
-	int mins = time / 60;
-
-	if (mins < 1)
-		return 1;
-
-	return mins;
+	return RoundToCeil(time / 60.0);
 }
 
 void DisplayBanTargetMenu(int client)
