@@ -340,7 +340,7 @@ public void OnClientAuthorized(int client, const char[] auth)
 
 		if (time > 0)
 		{
-			KickClient(client, "%t", "Banned player", auth, time);
+			KickClient(client, "%t", "Banned player", auth, RoundToCeil(time / 60.0));
 			return;
 		}
 
