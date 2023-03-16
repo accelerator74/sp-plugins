@@ -272,7 +272,7 @@ Action Command_Unban(int client, int args)
 	char authid[32];
 	GetCmdArgString(authid, sizeof(authid));
 
-	ReplaceString(authid, sizeof(authid), "\"", "");	
+	ReplaceString(authid, sizeof(authid), "\"", "");
 
 	/* Verify steamid */
 	bool idValid = false;
@@ -340,7 +340,7 @@ public void OnClientAuthorized(int client, const char[] auth)
 
 		if (time > 0)
 		{
-			KickClient(client, "%t", "Banned player", auth, RoundToCeil(time / 60.0));
+			KickClient(client, "%t", "Banned player", auth, GetTimeInMinutes(time));
 			return;
 		}
 
@@ -390,11 +390,11 @@ void CheckClient(Database owner, DBResultSet hQuery, const char[] error, any cli
 		{
 			if (hQuery.FetchString(2, reason, sizeof(reason)))
 			{
-				KickClient(client, "%t", "Banned player reason", authid, time - hQuery.FetchInt(3), reason);
+				KickClient(client, "%t", "Banned player reason", authid, GetTimeInMinutes(time - hQuery.FetchInt(3)), reason);
 			}
 			else
 			{
-				KickClient(client, "%t", "Banned player", authid, time - hQuery.FetchInt(3));
+				KickClient(client, "%t", "Banned player", authid, GetTimeInMinutes(time - hQuery.FetchInt(3)));
 			}
 		}
 		else
@@ -498,7 +498,7 @@ void PrepareBan(int client, int target, int time, const char[] reason)
 
 	char AdminName[128];
 	int immunity = GetAdmin(client, AdminName, sizeof(AdminName));
-	
+
 	char dbReason[255];
 	db.Escape(reason, dbReason, sizeof(dbReason));
 
@@ -525,11 +525,11 @@ void PrepareBan(int client, int target, int time, const char[] reason)
 	{
 		if (reason[0] != '\0')
 		{
-			KickClient(target, "%t", "Banned player reason", authid, time - GetTime(), reason);
+			KickClient(target, "%t", "Banned player reason", authid, GetTimeInMinutes(time - GetTime()), reason);
 		}
 		else
 		{
-			KickClient(target, "%t", "Banned player", authid, time - GetTime());
+			KickClient(target, "%t", "Banned player", authid,  GetTimeInMinutes(time - GetTime()));
 		}
 	}
 }
@@ -559,6 +559,16 @@ int GetAdmin(int client, char[] buffer, int maxlen)
 	}
 
 	return immunity;
+}
+
+int GetTimeInMinutes(int time)
+{
+	int mins = time / 60;
+
+	if (mins < 1)
+		return 1;
+
+	return mins;
 }
 
 void DisplayBanTargetMenu(int client)
@@ -617,10 +627,10 @@ void DisplayBanReasonMenu(int client)
 	{
 		g_hKvBanReasons.GetSectionName(reasonName, sizeof(reasonName));
 		g_hKvBanReasons.GetString(NULL_STRING, reasonFull, sizeof(reasonFull));
-		
+
 		//Add entry
 		menu.AddItem(reasonFull, reasonName);
-		
+
 	} while (g_hKvBanReasons.GotoNextKey(false));
 
 	//Reset kvHandle
@@ -638,7 +648,7 @@ void AdminMenu_Ban(TopMenu topmenu,
 {
 	//Reset chat reason first
 	playerinfo[param].isWaitingForChatReason = false;
-	
+
 	if (action == TopMenuAction_DisplayOption)
 	{
 		Format(buffer, maxlength, "%T", "Ban player", param);
@@ -673,13 +683,13 @@ int MenuHandler_BanReasonList(Menu menu, MenuAction action, int param1, int para
 		else
 		{
 			char info[64];
-			
+
 			menu.GetItem(param2, info, sizeof(info));
-			
+
 			PrepareBan(param1, playerinfo[param1].banTarget, playerinfo[param1].banTime, info);
 		}
 	}
-	
+
 	return 0;
 }
 
@@ -761,7 +771,7 @@ Action Command_Ban(int client, int args)
 		{
 			ReplyToCommand(client, "[SM] Usage: sm_ban <#userid|name> <minutes|0> [reason]");
 		}
-		
+
 		return Plugin_Handled;
 	}
 
@@ -792,7 +802,6 @@ Action Command_Ban(int client, int args)
 	playerinfo[client].banTargetUserId = GetClientUserId(target);
 
 	int time = StringToInt(s_time);
-
 	PrepareBan(client, target, time, Arguments[len]);
 
 	return Plugin_Handled;
@@ -814,7 +823,7 @@ Action Command_AbortBan(int client, int args)
 	{
 		ReplyToCommand(client, "[SM] %t", "AbortBan not waiting for custom reason");
 	}
-	
+
 	return Plugin_Handled;
 }
 
