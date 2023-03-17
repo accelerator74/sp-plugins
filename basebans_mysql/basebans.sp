@@ -320,33 +320,46 @@ void AddBan(int client, const char[] authid, int time, const char[] reason)
 #endif
 }
 
+#if defined BANS_CACHE
+public bool OnClientConnect(int client, char[] rejectmsg, int maxlen)
+{
+	if (!IsFakeClient(client))
+	{
+		char authid[32];
+
+		if (GetClientAuthId(client, AuthId_Steam2, authid, sizeof(authid)))
+		{
+			int time;
+
+			if (hBansCache.GetValue(authid, time))
+			{
+				if (!time)
+				{
+					Format(rejectmsg, maxlen, "%T", "Permabanned player", client, authid);
+					return false;
+				}
+
+				time -= GetTime();
+
+				if (time > 0)
+				{
+					Format(rejectmsg, maxlen, "%T", "Banned player", client, authid, GetTimeInMinutes(time));
+					return false;
+				}
+
+				hBansCache.Remove(authid);
+			}
+		}
+	}
+
+	return true;
+}
+#endif
+
 public void OnClientAuthorized(int client, const char[] auth)
 {
 	if (IsFakeClient(client))
 		return;
-
-#if defined BANS_CACHE
-	int time;
-
-	if (hBansCache.GetValue(auth, time))
-	{
-		if (!time)
-		{
-			KickClient(client, "%t", "Permabanned player", auth);
-			return;
-		}
-
-		time -= GetTime();
-
-		if (time > 0)
-		{
-			KickClient(client, "%t", "Banned player", auth, GetTimeInMinutes(time));
-			return;
-		}
-
-		hBansCache.Remove(auth);
-	}
-#endif
 
 	if (GetClientTime(client) > 10.0)
 		return;
