@@ -488,24 +488,24 @@ void PrepareBan(int client, int target, int time, const char[] reason)
 	GetClientName(target, name, sizeof(name));
 	GetClientIP(target, ip, sizeof(ip));
 
+	LogAction(client, target, "\"%L\" banned \"%L\" (minutes \"%d\") (reason \"%s\")", client, target, time, reason);
+
 	if (time <= 0)
 	{
-		time = 0;
 		if (reason[0] == '\0') {
 			ShowActivity(client, "%t", "Permabanned player", name);
 		} else {
 			ShowActivity(client, "%t", "Permabanned player reason", name, reason);
 		}
+		time = 0;
 	} else {
-		time = GetTime() + (time * 60);
 		if (reason[0] == '\0') {
 			ShowActivity(client, "%t", "Banned player", name, time);
 		} else {
 			ShowActivity(client, "%t", "Banned player reason", name, time, reason);
 		}
+		time = GetTime() + (time * 60);
 	}
-
-	LogAction(client, target, "\"%L\" banned \"%L\" (minutes \"%d\") (reason \"%s\")", client, target, time, reason);
 
 	db.Escape(name, name, sizeof(name));
 
@@ -538,11 +538,11 @@ void PrepareBan(int client, int target, int time, const char[] reason)
 	{
 		if (reason[0] != '\0')
 		{
-			KickClient(target, "%t", "Banned player reason", authid, GetTimeInMinutes(time - GetTime()), reason);
+			KickClient(target, "%t", "Banned player reason", authid, time - GetTime(), reason);
 		}
 		else
 		{
-			KickClient(target, "%t", "Banned player", authid,  GetTimeInMinutes(time - GetTime()));
+			KickClient(target, "%t", "Banned player", authid,  time - GetTime());
 		}
 	}
 }
