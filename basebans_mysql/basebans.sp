@@ -492,12 +492,12 @@ void PrepareBan(int client, int target, int time, const char[] reason)
 
 	if (time <= 0)
 	{
+		time = 0;
 		if (reason[0] == '\0') {
 			ShowActivity(client, "%t", "Permabanned player", name);
 		} else {
 			ShowActivity(client, "%t", "Permabanned player reason", name, reason);
 		}
-		time = 0;
 	} else {
 		if (reason[0] == '\0') {
 			ShowActivity(client, "%t", "Banned player", name, time);
