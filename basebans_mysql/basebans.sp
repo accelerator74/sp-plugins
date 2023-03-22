@@ -538,11 +538,11 @@ void PrepareBan(int client, int target, int time, const char[] reason)
 	{
 		if (reason[0] != '\0')
 		{
-			KickClient(target, "%t", "Banned player reason", authid, time - GetTime(), reason);
+			KickClient(target, "%t", "Banned player reason", authid, GetTimeInMinutes(time - GetTime()), reason);
 		}
 		else
 		{
-			KickClient(target, "%t", "Banned player", authid,  time - GetTime());
+			KickClient(target, "%t", "Banned player", authid, GetTimeInMinutes(time - GetTime()));
 		}
 	}
 }
