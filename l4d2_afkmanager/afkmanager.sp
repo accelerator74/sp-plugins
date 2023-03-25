@@ -104,7 +104,7 @@ Action timer_AfkCheck(Handle timer)
 				}
 				else
 				{
-					PrintCenterText(client, "\x05AFK autokick: \x03%i sec", g_iAfkKick - playerData[client].specTime);
+					PrintCenterText(client, "AFK autokick: %i sec", g_iAfkKick - playerData[client].specTime);
 				}
 			}
 			else
