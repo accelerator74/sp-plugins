@@ -299,7 +299,7 @@ void AddBan(int client, const char[] authid, int time, const char[] reason)
 	char AdminName[128];
 	int immunity = GetAdmin(client, AdminName, sizeof(AdminName));
 
-	if (time < 0)
+	if (time <= 0)
 	{
 		time = 0;
 	}
