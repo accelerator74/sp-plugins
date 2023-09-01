@@ -24,7 +24,7 @@ public Plugin myinfo =
 	name = "AFK Manager",
 	author = "Accelerator",
 	description = "AutoKick AFK Players",
-	version = "3.4",
+	version = "3.5",
 	url = "https://github.com/accelerator74/sp-plugins"
 }
 
@@ -116,6 +116,10 @@ Action timer_AfkCheck(Handle timer)
 					continue;
 				
 				GetClientAbsOrigin(client, curPosition);
+				
+				if (IsInSaferoom(curPosition))
+					continue;
+				
 				GetClientEyeAngles(client, curAngles);
 				
 				isAFK = true;
@@ -173,4 +177,33 @@ void MoveToSpectator(any client)
 	
 	ChangeClientTeam(client, 1);
 	PrintToChat(client, "\x05You moved in spectators for inaction");
+}
+
+bool IsInSaferoom( const float vOrigin[3] )
+{
+	int info_changelevel = MaxClients + 1;
+	
+	while ( (info_changelevel = FindEntityByClassname(info_changelevel, "info_changelevel")) && IsValidEntity(info_changelevel) )
+	{
+		float vMins[3], vMaxs[3];
+		GetEntPropVector(info_changelevel, Prop_Data, "m_vecMins", vMins);
+		GetEntPropVector(info_changelevel, Prop_Data, "m_vecMaxs", vMaxs);
+
+		if ( IsPointInBox(vOrigin, vMins, vMaxs) )
+            return true;
+	}
+	
+	return false;
+}
+
+bool IsPointInBox( const float pt[3], const float boxMin[3], const float boxMax[3] )
+{
+	if ( (pt[0] > boxMax[0]) || (pt[0] < boxMin[0]) )
+		return false;
+	if ( (pt[1] > boxMax[1]) || (pt[1] < boxMin[1]) )
+		return false;
+	if ( (pt[2] > boxMax[2]) || (pt[2] < boxMin[2]) )
+		return false;
+	
+	return true;
 }
