@@ -837,7 +837,7 @@ Action Command_AbortBan(int client, int args)
 
 public Action OnClientSayCommand(int client, const char[] command, const char[] sArgs)
 {
-	if(playerinfo[client].isWaitingForChatReason)
+	if(playerinfo[client].isWaitingForChatReason && !IsChatTrigger())
 	{
 		playerinfo[client].isWaitingForChatReason = false;
 		PrepareBan(client, playerinfo[client].banTarget, playerinfo[client].banTime, sArgs);
