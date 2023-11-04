@@ -63,6 +63,11 @@
 			{
 				"windows"	"60"	//0x75 --> 0x90
 			}
+			"CInferno::m_maxFlames"
+			{
+				"windows"	"2960"
+				"linux"		"2980"
+			}
 		}
 		"Signatures"
 		{

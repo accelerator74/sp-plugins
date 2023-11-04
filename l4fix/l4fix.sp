@@ -25,12 +25,12 @@
 #pragma newdecls required
 
 #define GAMEDATA "l4fix"
-#define PLUGIN_VERSION	"1.0.7"
+#define PLUGIN_VERSION	"1.0.8"
 
-static int g_iWitchHarasser[2048+1];
-static float g_fPreventDamage[MAXPLAYERS+1][MAXPLAYERS+1];
-static float g_fLastMeleeSwing[MAXPLAYERS+1];
-static float g_fNextAttack[MAXPLAYERS+1];
+static int g_iWitchHarasser[2049];
+static float g_fPreventDamage[33][33];
+static float g_fLastMeleeSwing[33];
+static float g_fNextAttack[33];
 
 Address Collision_Address = Address_Null;
 
@@ -51,6 +51,7 @@ int UpdateBytesStore[6];
 int g_iWaterLevel = -1;
 int g_iActiveWeapon = -1;
 int g_iWitchSequence = -1;
+int g_iMaxFlames = -1;
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -81,10 +82,15 @@ public void OnPluginStart()
 	HookEvent("weapon_fire", eWeaponFire);
 	HookEvent("witch_spawn", eWitchSpawn);
 	HookEvent("witch_harasser_set", eWitchHarasser);
+	HookEvent("spitter_killed", eSpitterKilled, EventHookMode_PostNoCopy);
 	
 	Handle hGamedata = LoadGameConfigFile(GAMEDATA);
 	if(hGamedata == null) 
 		SetFailState("Failed to load \"%s.txt\" gamedata.", GAMEDATA);
+	
+	g_iMaxFlames = GameConfGetOffset(hGamedata, "CInferno::m_maxFlames");
+	if( g_iMaxFlames == -1 ) 
+		SetFailState("Invalid offset for 'CInferno::m_maxFlames'.");
 	
 	Address patch = GameConfGetAddress(hGamedata, "CCharge::HandleCustomCollision");
 	if(!patch) 
@@ -349,6 +355,11 @@ void eWitchHarasser(Event hEvent, const char[] sEventName, bool bDontBroadcast)
 	}
 }
 
+void eSpitterKilled(Event hEvent, const char[] sEventName, bool bDontBroadcast)
+{
+	CreateTimer(1.0, FindDeathSpit, _, TIMER_FLAG_NO_MAPCHANGE);
+}
+
 void OnWeaponSwitched(int client, int weapon)
 {
 	if (!IsFakeClient(client))
@@ -357,8 +368,8 @@ void OnWeaponSwitched(int client, int weapon)
 		GetEntityClassname(weapon, sBuffer, sizeof(sBuffer));
 		if (StrEqual(sBuffer, "weapon_melee"))
 		{
-			float fShouldbeNextAttack = g_fLastMeleeSwing[client] + 0.92;
-			float fByServerNextAttack = GetGameTime() + 0.5;
+			float fShouldbeNextAttack = g_fLastMeleeSwing[client] + 1.25;
+			float fByServerNextAttack = GetGameTime() + 0.55;
 			g_fNextAttack[client] = fShouldbeNextAttack > fByServerNextAttack ? fShouldbeNextAttack : fByServerNextAttack;
 		}
 	}
@@ -402,6 +413,29 @@ Action OnWitchDamage(int victim, int &attacker, int &inflictor, float &damage, i
 	}
 	
 	return Plugin_Continue;
+}
+
+Action FindDeathSpit(Handle hTimer)
+{
+	int iEntity = -1, iMaxFlames = 0, iCurrentFlames = 0;
+	Address pEntity;
+	
+	while ((iEntity = FindEntityByClassname(iEntity, "insect_swarm")) != -1) {
+		pEntity = GetEntityAddress(iEntity);
+		
+		if (pEntity == Address_Null)
+			continue;
+		
+		iMaxFlames = LoadFromAddress(pEntity + view_as<Address>(g_iMaxFlames), NumberType_Int32);
+		iCurrentFlames = GetEntProp(iEntity, Prop_Send, "m_fireCount");
+		
+		if (iMaxFlames == 2 && iCurrentFlames == 2) {
+			SetEntProp(iEntity, Prop_Send, "m_fireCount", 1);
+			StoreToAddress(pEntity + view_as<Address>(g_iMaxFlames), 1, NumberType_Int32);
+		}
+	}
+
+	return Plugin_Stop;
 }
 
 public void OnEntityCreated(int iEntity, const char[] sClassname)
