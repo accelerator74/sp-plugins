@@ -1,8 +1,10 @@
 #pragma semicolon 1
+#pragma newdecls required
+
 #include <sourcemod>
 #include <sdktools>
 
-bool incap_magnum[MAXPLAYERS+1];
+bool incap_magnum[33];
 
 public Plugin myinfo = {
 	name = "L4D2 Incapped Magnum",

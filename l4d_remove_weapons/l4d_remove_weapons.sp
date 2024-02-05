@@ -1,4 +1,5 @@
 #pragma semicolon 1
+#pragma newdecls required
 
 #include <sourcemod>
 #include <sdkhooks>
@@ -128,7 +129,7 @@ public void OnClientPutInServer(int client)
 
 public void OnEntityCreated(int entity, const char[] classname)
 {	
-	if (classname[0] == 'w' && StrContains(classname, "weapon_") != -1)
+	if (classname[0] == 'w' && !strncmp(classname, "weapon_", 7))
 	{
 		if (!IsServerProcessing()) return;
 		if (hWeaponClassList.FindString(classname) != -1)
@@ -167,11 +168,11 @@ Action Cleaner(Handle timer)
 	
 	for (int i = MaxClients + 1; i <= 2048; i++)
 	{
-		if (IsValidEntity(i) && IsValidEdict(i))
+		if (IsValidEdict(i))
 		{
 			GetEdictClassname(i, classname, MAX_LINE_WIDTH);
 			
-			if (StrContains(classname, "weapon_") != -1)
+			if (!strncmp(classname, "weapon_", 7))
 			{
 				index = hWeaponClassList.FindString(classname);
 				

@@ -1,3 +1,5 @@
+#pragma semicolon 1
+
 #include <sourcemod>
 #include <colors>
 
@@ -395,7 +397,7 @@ bool:IsTank(client)
 
 bool:IsIncapacitated(client)
 {
-	new isIncap = GetEntProp(client, Prop_Send, "m_isIncapacitated");
+	new isIncap = GetEntProp(client, Prop_Send, "m_isIncapacitated", 1);
 	if (isIncap) return true;
 	return false;
 }

@@ -11,7 +11,7 @@ enum struct PlayerData {
 	float angles[2];
 }
 
-PlayerData playerData[MAXPLAYERS+1];
+PlayerData playerData[MAXPLAYERS];
 
 ConVar l4d2_afk_kick;
 ConVar l4d2_afk_time;
@@ -61,8 +61,8 @@ void Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 	
-	playerData[client].position = view_as<float>({0.0, 0.0, 0.0});
-	playerData[client].angles = view_as<float>({0.0, 0.0});
+	playerData[client].position = NULL_VECTOR;
+	playerData[client].angles[0] = playerData[client].angles[1] = 0.0;
 	playerData[client].specTime = 0;
 	playerData[client].afkTime = 0;
 	playerData[client].shoved = 0;
@@ -154,7 +154,7 @@ Action timer_AfkCheck(Handle timer)
 					{
 						SetEntProp(client, Prop_Send, "m_iGlowType", 0);
 						SetEntProp(client, Prop_Send, "m_glowColorOverride", 0);
-						SetEntProp(client, Prop_Send, "m_bFlashing", 0);
+						SetEntProp(client, Prop_Send, "m_bFlashing", 0, 1);
 						SetEntProp(client, Prop_Send, "m_nGlowRange", 0);
 						RequestFrame(MoveToSpectator, GetClientUserId(client));
 					}

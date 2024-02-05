@@ -365,7 +365,7 @@ void OnWeaponSwitched(int client, int weapon)
 	if (!IsFakeClient(client))
 	{
 		char sBuffer[32];
-		GetEntityClassname(weapon, sBuffer, sizeof(sBuffer));
+		GetEdictClassname(weapon, sBuffer, sizeof(sBuffer));
 		if (StrEqual(sBuffer, "weapon_melee"))
 		{
 			float fShouldbeNextAttack = g_fLastMeleeSwing[client] + 1.25;
@@ -464,7 +464,7 @@ Action BlockRecursiveDamage(int iVictim, int &iCharger, int &iInflictor, float &
 	
 	if(iCharger < 1 || iCharger > MaxClients || 
 		GetClientTeam(iCharger) != 3 || !IsPlayerAlive(iCharger) || 
-		GetEntProp(iCharger, Prop_Send, "m_zombieClass", 1) != 6 )
+		GetEntProp(iCharger, Prop_Send, "m_zombieClass") != 6 )
 		return Plugin_Continue;
 	
 	int iAbility = GetEntPropEnt(iCharger, Prop_Send, "m_customAbility");
@@ -488,7 +488,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 {
 	if (IsClientInGame(client) && GetClientTeam(client) == 2 && IsPlayerAlive(client))
 	{
-		if (GetEntData(client, g_iWaterLevel) == 3)
+		if (GetEntData(client, g_iWaterLevel, 1) == 3)
 		{
 			SetEntProp(client, Prop_Data, "m_idrownrestored", GetEntProp(client, Prop_Data, "m_idrowndmg"));
 		}
@@ -499,7 +499,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 			if (iWeapon != -1)
 			{
 				char sBuffer[32];
-				GetEntityClassname(iWeapon, sBuffer, sizeof(sBuffer));
+				GetEdictClassname(iWeapon, sBuffer, sizeof(sBuffer));
 				if (StrEqual(sBuffer, "weapon_melee"))
 				{
 					if (g_fNextAttack[client] - GetGameTime() > 0.0)

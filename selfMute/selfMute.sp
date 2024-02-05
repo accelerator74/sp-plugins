@@ -72,7 +72,7 @@ Action selfMute(int client, int args)
 {
 	if(client == 0)
 	{
-		PrintToChat(client, "\x04[SM] Cannot use command from RCON");
+		PrintToChat(client, "[SM] Cannot use command from RCON");
 		return Plugin_Handled;
 	}
 	
@@ -136,7 +136,7 @@ int MenuHandler_MuteMenu(Menu menu, MenuAction action, int param1, int param2)
 			
 			if ((target = GetClientOfUserId(userid)) == 0)
 			{
-				PrintToChat(param1, "\x04[SM] Player no longer available");
+				PrintToChat(param1, "[SM] Player no longer available");
 			}
 			else
 			{
@@ -161,7 +161,7 @@ Action selfUnmute(int client, int args)
 {
 	if(client == 0)
 	{
-		PrintToChat(client, "\x04[SM] Cannot use command from RCON");
+		PrintToChat(client, "[SM] Cannot use command from RCON");
 		return Plugin_Handled;
 	}
 	
@@ -225,7 +225,7 @@ int MenuHandler_UnMuteMenu(Menu menu, MenuAction action, int param1, int param2)
 			
 			if ((target = GetClientOfUserId(userid)) == 0)
 			{
-				PrintToChat(param1, "\x04[SM] Player no longer available");
+				PrintToChat(param1, "[SM] Player no longer available");
 			}
 			else
 			{
@@ -250,7 +250,7 @@ Action checkmute(int client, int args)
 {
 	if (client == 0)
 	{
-		PrintToChat(client, "\x04[SM] Cannot use command from RCON");
+		PrintToChat(client, "[SM] Cannot use command from RCON");
 		return Plugin_Handled;
 	}
 	

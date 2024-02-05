@@ -1,13 +1,14 @@
 #pragma semicolon 1
+#pragma newdecls required
+
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
-#pragma newdecls required
 
 #define CHECK_RADIUS 50.0
 
-float fg_xyz[MAXPLAYERS+1][5];
-bool fg_active[MAXPLAYERS+1];
+float fg_xyz[33][5];
+bool fg_active[33];
 int g_VelModifierOffset = -1;
 
 public Plugin myinfo =
