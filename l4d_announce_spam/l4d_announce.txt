@@ -1,0 +1,55 @@
+"Games"
+{
+	"left4dead2"
+	{
+		"Addresses"
+		{
+			"HitAnnouncement"
+			{
+				"windows"
+				{
+					"signature" "GasCanDestroy"
+					"offset"	"0x23"
+				}
+			}
+		}
+		"Functions"
+		{
+			"HitAnnouncement"
+			{
+				"signature"		"HitAnnouncement"
+				"callconv"		"cdecl"
+				"return"		"bool"
+				"this"			"ignore"
+				"arguments"
+				{
+					"a1"
+					{
+						"type"	"objectptr"
+					}
+				}
+			}
+		}
+		"Offsets"
+		{
+			"os"
+			{
+				"linux"		"0"
+				"windows"	"1"
+			}
+		}
+		"Signatures"
+		{
+			"HitAnnouncement"
+			{
+				"library"		"server"
+				"linux"			"@_Z19ForEachTerrorPlayerI15HitAnnouncementEbRT_"
+			}
+			"GasCanDestroy"
+			{
+				"library"		"server"
+				"windows"		"\x55\x8B\xEC\x83\xEC\x18\x33\xC0\x89\x45\xF4"
+			}
+		}
+	}
+}
