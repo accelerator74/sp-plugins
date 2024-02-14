@@ -101,7 +101,7 @@ void Event_DontBroadcast(Event event, const char[] name, bool dontBroadcast)
 	if (!target || !enemy)
 		return;
 
-	if (!IsFakeClient(enemy))
+	if (!IsFakeClient(target))
 		return;
 
 	event.BroadcastDisabled = true;
