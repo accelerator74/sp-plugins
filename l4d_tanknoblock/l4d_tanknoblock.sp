@@ -33,7 +33,7 @@ public void OnPluginStart()
 	HookEvent("ability_use", Ability_Use);
 }
 
-Action TyTimerConnected(Handle timer, any client)
+Action TyTimerConnected(Handle timer, int client)
 {
 	if (IsTank(client))
 	{
@@ -130,7 +130,7 @@ void Event_TankSpawn(Event event, const char [] name, bool dontBroadcast)
 	}
 }
 
-void Ability_Use(Event event, char[] event_name, bool dontBroadcast)
+void Ability_Use(Event event, const char[] event_name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
 
@@ -167,9 +167,14 @@ void GetNearestClientPosition(int tank, float position[3])
 
 bool IsTank(int client)
 {
+	static int iZC_offs = -1;
+	if (iZC_offs == -1)
+	{
+		iZC_offs = FindSendPropInfo("CTerrorPlayer", "m_zombieClass");
+	}
 	if (client > 0 && client <= MaxClients && IsClientInGame(client) && IsFakeClient(client) && GetClientTeam(client) == 3 && IsPlayerAlive(client))
 	{
-		if(GetEntProp(client, Prop_Send, "m_zombieClass") == 8)
+		if (GetEntData(client, iZC_offs) == 8)
 			return true;
 	}
 	return false;

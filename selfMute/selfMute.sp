@@ -151,7 +151,7 @@ int MenuHandler_MuteMenu(Menu menu, MenuAction action, int param1, int param2)
 void muteTargetedPlayer(int client, int target)
 {
 	SetListenOverride(client, target, Listen_No);
-	PrintToChat(client, "\x04[Self-Mute]\x01 You have self-muted:\x04 %N", target);
+	PrintToChat(client, "\x04[Self-Mute]\x01 You have self-muted:\x03 %N", target);
 	g_MuteList[client][target] = GetClientUserId(target);
 }
 
@@ -240,7 +240,7 @@ int MenuHandler_UnMuteMenu(Menu menu, MenuAction action, int param1, int param2)
 void unMuteTargetedPlayer(int client, int target)
 {
 	SetListenOverride(client, target, Listen_Default);
-	PrintToChat(client, "\x04[Self-Mute]\x01 You have self-unmuted:\x04 %N", target);
+	PrintToChat(client, "\x04[Self-Mute]\x01 You have self-unmuted:\x03 %N", target);
 	g_MuteList[client][target] = 0;
 }
 
@@ -275,7 +275,7 @@ Action checkmute(int client, int args)
 		}
 	}
 	
-	PrintToChat(client, "\x04[Self-Mute]\x01 List of self-muted:\x04 %s", nickNames);
+	PrintToChat(client, "\x04[Self-Mute]\x01 List of self-muted:\x03 %s", nickNames);
 	
 	return Plugin_Handled;
 }

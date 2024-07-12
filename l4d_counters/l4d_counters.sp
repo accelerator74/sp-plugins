@@ -291,7 +291,7 @@ public Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroadcast)
 		decl String:sHealth[64];
 		if (GetTankHP(sHealth, sizeof(sHealth)) > 0)
 		{
-			CPrintToChatAll("{red}Tank(s){default} had %s health remaining!", sHealth);
+			CPrintToChatAll("{red}Tank(s){default} had {olive}%s{default} health remaining!", sHealth);
 			PrintTotalTankDamage(0);
 			ClearTankDamageCounter();
 		}
@@ -312,7 +312,7 @@ public Event_PlayerIncapacitated(Handle:event, const String:name[], bool:dontBro
 			decl String:sHealth[64];
 			if (GetTankHP(sHealth, sizeof(sHealth)) > 0)
 			{
-				CPrintToChatAll("{red}Tank(s){default} had %s health remaining!", sHealth);
+				CPrintToChatAll("{red}Tank(s){default} had {olive}%s{default} health remaining!", sHealth);
 				PrintTotalTankDamage(0);
 				ClearTankDamageCounter();
 			}

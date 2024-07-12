@@ -1550,7 +1550,7 @@ bool L4D_IsSurvivorBusy(int client)
 {
 	return GetEntityFlags(client) & FL_FROZEN || 
 		GetClientHudFlags(client) & ~HIDEHUD_BONUS_PROGRESS || 
-		GetEntData(client, m_isIncapacitated) > 0 || 
+		GetEntData(client, m_isIncapacitated, 1) > 0 || 
 		GetEntData(client, m_knockdownReason) > 0 || 
 		GetEntDataFloat(client, m_staggerDist) > 0.0 || 
 		GetEntDataEnt2(client, m_pounceAttacker) > 0 || 
@@ -1570,7 +1570,7 @@ bool L4D2_IsSurvivorBusy(int client)
 {
 	return GetEntityFlags(client) & FL_FROZEN || 
 		GetClientHudFlags(client) & ~HIDEHUD_BONUS_PROGRESS || 
-		GetEntData(client, m_isIncapacitated) > 0 || 
+		GetEntData(client, m_isIncapacitated, 1) > 0 || 
 		GetEntData(client, m_knockdownReason) > 0 || 
 		GetEntDataFloat(client, m_staggerDist) > 0.0 || 
 		GetEntDataEnt2(client, m_pummelAttacker) > 0 || 

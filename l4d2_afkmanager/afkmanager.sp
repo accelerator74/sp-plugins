@@ -170,7 +170,7 @@ Action timer_AfkCheck(Handle timer)
 	return Plugin_Continue;
 }
 
-void MoveToSpectator(any client)
+void MoveToSpectator(int client)
 {
 	if ((client = GetClientOfUserId(client)) == 0)
 		return;

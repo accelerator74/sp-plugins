@@ -372,7 +372,7 @@ public void OnClientAuthorized(int client, const char[] auth)
  	db.Query(CheckClient, query, GetClientUserId(client));
 }
 
-void CheckClient(Database owner, DBResultSet hQuery, const char[] error, any client)
+void CheckClient(Database owner, DBResultSet hQuery, const char[] error, int client)
 {
 	if (((client = GetClientOfUserId(client)) == 0) || hQuery == null)
 		return;
@@ -419,7 +419,7 @@ void CheckClient(Database owner, DBResultSet hQuery, const char[] error, any cli
 	}
 }
 
-void PrepareUnban(Database owner, DBResultSet hQuery, const char[] error, any client)
+void PrepareUnban(Database owner, DBResultSet hQuery, const char[] error, int client)
 {
 	if (hQuery == null)
 		return;

@@ -295,7 +295,7 @@ public void OnPluginStart()
 	l4d2_loot_items[loot_cola_bottles] = CreateConVar("l4d2_loot_cola_bottles", "0", "");
 
 	int i;
-	for (i = 0; i <  DropChances; i++)
+	for (i = 0; i < DropChances; i++)
 	{
 		HookConVarChange(l4d2_loot_chances[i], OnConVarChanceChange);
 		cvar_value_chance[i] = l4d2_loot_chances[i].IntValue;
