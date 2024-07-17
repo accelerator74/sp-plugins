@@ -9,7 +9,7 @@ public Plugin myinfo =
 	name = "[L4D2] Loot of Zombies",
 	author = "Accelerator & Jonny",
 	description = "Plugin drops some items from killed special-infected",
-	version = "2.1",
+	version = "2.2",
 	url = "http://forums.alliedmods.net/showthread.php?t=115763"
 }
 
@@ -155,154 +155,154 @@ int cvar_value_chance[DropChances];
 public void OnPluginStart()
 {
 	HookEvent("player_death", Event_PlayerDeath);
-	
-	DropItemsFromPlayers = CreateConVar("l4d2_loot_from_players", "0", "");
+
+	DropItemsFromPlayers = CreateConVar("l4d2_loot_from_players", "0");
 	NoFarm = CreateConVar("l4d2_loot_nofarm", "0", "No farm");
-	
-	l4d2_loot_g_chance_nodrop = CreateConVar("l4d2_loot_g_chance_nodrop", "5", "");
 
-	l4d2_loot_h_drop_items = CreateConVar("l4d2_loot_h_drop_items", "1", "");
-	l4d2_loot_b_drop_items = CreateConVar("l4d2_loot_b_drop_items", "1", "");
-	l4d2_loot_s_drop_items = CreateConVar("l4d2_loot_s_drop_items", "1", "");
-	l4d2_loot_c_drop_items = CreateConVar("l4d2_loot_c_drop_items", "1", "");
-	l4d2_loot_sp_drop_items = CreateConVar("l4d2_loot_sp_drop_items", "1", "");
-	l4d2_loot_j_drop_items = CreateConVar("l4d2_loot_j_drop_items", "1", "");
-	l4d2_loot_t_drop_items = CreateConVar("l4d2_loot_t_drop_items", "1", "");
-	
-	l4d2_loot_chances[loot_h_chance_health] = CreateConVar("l4d2_loot_h_chance_health", "35", "");
-	l4d2_loot_chances[loot_h_chance_melee] = CreateConVar("l4d2_loot_h_chance_melee", "30", "");
-	l4d2_loot_chances[loot_h_chance_bullet] = CreateConVar("l4d2_loot_h_chance_bullet", "44", "");
-	l4d2_loot_chances[loot_h_chance_explosive] = CreateConVar("l4d2_loot_h_chance_explosive", "1", "");
-	l4d2_loot_chances[loot_h_chance_throw] = CreateConVar("l4d2_loot_h_chance_throw", "50", "");
-	l4d2_loot_chances[loot_h_chance_upgrades] = CreateConVar("l4d2_loot_h_chance_upgrades", "30", "");
-	l4d2_loot_chances[loot_h_chance_misc] = CreateConVar("l4d2_loot_h_chance_misc", "0", "");
-	l4d2_loot_chances[loot_h_chance_misc2] = CreateConVar("l4d2_loot_h_chance_misc2", "10", "");
-	l4d2_loot_chances[loot_h_chance_nodrop] = CreateConVar("l4d2_loot_h_chance_nodrop", "30", "");
+	l4d2_loot_g_chance_nodrop = CreateConVar("l4d2_loot_g_chance_nodrop", "5");
 
-	l4d2_loot_chances[loot_b_chance_health] = CreateConVar("l4d2_loot_b_chance_health", "35", "");
-	l4d2_loot_chances[loot_b_chance_melee] = CreateConVar("l4d2_loot_b_chance_melee", "30", "");
-	l4d2_loot_chances[loot_b_chance_bullet] = CreateConVar("l4d2_loot_b_chance_bullet", "7", "");
-	l4d2_loot_chances[loot_b_chance_explosive] = CreateConVar("l4d2_loot_b_chance_explosive", "1", "");
-	l4d2_loot_chances[loot_b_chance_throw] = CreateConVar("l4d2_loot_b_chance_throw", "50", "");
-	l4d2_loot_chances[loot_b_chance_upgrades] = CreateConVar("l4d2_loot_b_chance_upgrades", "10", "");
-	l4d2_loot_chances[loot_b_chance_misc] = CreateConVar("l4d2_loot_b_chance_misc", "0", "");
-	l4d2_loot_chances[loot_b_chance_misc2] = CreateConVar("l4d2_loot_b_chance_misc2", "10", "");
-	l4d2_loot_chances[loot_b_chance_nodrop] = CreateConVar("l4d2_loot_b_chance_nodrop", "20", "");
+	l4d2_loot_h_drop_items = CreateConVar("l4d2_loot_h_drop_items", "1");
+	l4d2_loot_b_drop_items = CreateConVar("l4d2_loot_b_drop_items", "1");
+	l4d2_loot_s_drop_items = CreateConVar("l4d2_loot_s_drop_items", "1");
+	l4d2_loot_c_drop_items = CreateConVar("l4d2_loot_c_drop_items", "1");
+	l4d2_loot_sp_drop_items = CreateConVar("l4d2_loot_sp_drop_items", "1");
+	l4d2_loot_j_drop_items = CreateConVar("l4d2_loot_j_drop_items", "1");
+	l4d2_loot_t_drop_items = CreateConVar("l4d2_loot_t_drop_items", "1");
 
-	l4d2_loot_chances[loot_s_chance_health] = CreateConVar("l4d2_loot_s_chance_health", "25", "");
-	l4d2_loot_chances[loot_s_chance_melee] = CreateConVar("l4d2_loot_s_chance_melee", "40", "");
-	l4d2_loot_chances[loot_s_chance_bullet] = CreateConVar("l4d2_loot_s_chance_bullet", "44", "");
-	l4d2_loot_chances[loot_s_chance_explosive] = CreateConVar("l4d2_loot_s_chance_explosive", "1", "");
-	l4d2_loot_chances[loot_s_chance_throw] = CreateConVar("l4d2_loot_s_chance_throw", "50", "");
-	l4d2_loot_chances[loot_s_chance_upgrades] = CreateConVar("l4d2_loot_s_chance_upgrades", "10", "");
-	l4d2_loot_chances[loot_s_chance_misc] = CreateConVar("l4d2_loot_s_chance_misc", "10", "");
-	l4d2_loot_chances[loot_s_chance_misc2] = CreateConVar("l4d2_loot_s_chance_misc2", "10", "");
-	l4d2_loot_chances[loot_s_chance_nodrop] = CreateConVar("l4d2_loot_s_chance_nodrop", "20", "");
+	l4d2_loot_chances[loot_h_chance_health] = CreateConVar("l4d2_loot_h_chance_health", "35");
+	l4d2_loot_chances[loot_h_chance_melee] = CreateConVar("l4d2_loot_h_chance_melee", "30");
+	l4d2_loot_chances[loot_h_chance_bullet] = CreateConVar("l4d2_loot_h_chance_bullet", "44");
+	l4d2_loot_chances[loot_h_chance_explosive] = CreateConVar("l4d2_loot_h_chance_explosive", "1");
+	l4d2_loot_chances[loot_h_chance_throw] = CreateConVar("l4d2_loot_h_chance_throw", "50");
+	l4d2_loot_chances[loot_h_chance_upgrades] = CreateConVar("l4d2_loot_h_chance_upgrades", "30");
+	l4d2_loot_chances[loot_h_chance_misc] = CreateConVar("l4d2_loot_h_chance_misc", "0");
+	l4d2_loot_chances[loot_h_chance_misc2] = CreateConVar("l4d2_loot_h_chance_misc2", "10");
+	l4d2_loot_chances[loot_h_chance_nodrop] = CreateConVar("l4d2_loot_h_chance_nodrop", "30");
 
-	l4d2_loot_chances[loot_c_chance_health] = CreateConVar("l4d2_loot_c_chance_health", "35", "");
-	l4d2_loot_chances[loot_c_chance_melee] = CreateConVar("l4d2_loot_c_chance_melee", "0", "");
-	l4d2_loot_chances[loot_c_chance_bullet] = CreateConVar("l4d2_loot_c_chance_bullet", "10", "");
-	l4d2_loot_chances[loot_c_chance_explosive] = CreateConVar("l4d2_loot_c_chance_explosive", "1", "");
-	l4d2_loot_chances[loot_c_chance_throw] = CreateConVar("l4d2_loot_c_chance_throw", "0", "");
-	l4d2_loot_chances[loot_c_chance_upgrades] = CreateConVar("l4d2_loot_c_chance_upgrades", "20", "");
-	l4d2_loot_chances[loot_c_chance_misc] = CreateConVar("l4d2_loot_c_chance_misc", "0", "");
-	l4d2_loot_chances[loot_c_chance_misc2] = CreateConVar("l4d2_loot_c_chance_misc2", "10", "");
-	l4d2_loot_chances[loot_c_chance_nodrop] = CreateConVar("l4d2_loot_c_chance_nodrop", "20", "");
+	l4d2_loot_chances[loot_b_chance_health] = CreateConVar("l4d2_loot_b_chance_health", "35");
+	l4d2_loot_chances[loot_b_chance_melee] = CreateConVar("l4d2_loot_b_chance_melee", "30");
+	l4d2_loot_chances[loot_b_chance_bullet] = CreateConVar("l4d2_loot_b_chance_bullet", "7");
+	l4d2_loot_chances[loot_b_chance_explosive] = CreateConVar("l4d2_loot_b_chance_explosive", "1");
+	l4d2_loot_chances[loot_b_chance_throw] = CreateConVar("l4d2_loot_b_chance_throw", "50");
+	l4d2_loot_chances[loot_b_chance_upgrades] = CreateConVar("l4d2_loot_b_chance_upgrades", "10");
+	l4d2_loot_chances[loot_b_chance_misc] = CreateConVar("l4d2_loot_b_chance_misc", "0");
+	l4d2_loot_chances[loot_b_chance_misc2] = CreateConVar("l4d2_loot_b_chance_misc2", "10");
+	l4d2_loot_chances[loot_b_chance_nodrop] = CreateConVar("l4d2_loot_b_chance_nodrop", "20");
 
-	l4d2_loot_chances[loot_sp_chance_health] = CreateConVar("l4d2_loot_sp_chance_health", "35", "");
-	l4d2_loot_chances[loot_sp_chance_melee] = CreateConVar("l4d2_loot_sp_chance_melee", "0", "");
-	l4d2_loot_chances[loot_sp_chance_bullet] = CreateConVar("l4d2_loot_sp_chance_bullet", "0", "");
-	l4d2_loot_chances[loot_sp_chance_explosive] = CreateConVar("l4d2_loot_sp_chance_explosive", "1", "");
-	l4d2_loot_chances[loot_sp_chance_throw] = CreateConVar("l4d2_loot_sp_chance_throw", "0", "");
-	l4d2_loot_chances[loot_sp_chance_upgrades] = CreateConVar("l4d2_loot_sp_chance_upgrades", "20", "");
-	l4d2_loot_chances[loot_sp_chance_misc] = CreateConVar("l4d2_loot_sp_chance_misc", "50", "");
-	l4d2_loot_chances[loot_sp_chance_misc2] = CreateConVar("l4d2_loot_sp_chance_misc2", "10", "");
-	l4d2_loot_chances[loot_sp_chance_nodrop] = CreateConVar("l4d2_loot_sp_chance_nodrop", "20", "");
+	l4d2_loot_chances[loot_s_chance_health] = CreateConVar("l4d2_loot_s_chance_health", "25");
+	l4d2_loot_chances[loot_s_chance_melee] = CreateConVar("l4d2_loot_s_chance_melee", "40");
+	l4d2_loot_chances[loot_s_chance_bullet] = CreateConVar("l4d2_loot_s_chance_bullet", "44");
+	l4d2_loot_chances[loot_s_chance_explosive] = CreateConVar("l4d2_loot_s_chance_explosive", "1");
+	l4d2_loot_chances[loot_s_chance_throw] = CreateConVar("l4d2_loot_s_chance_throw", "50");
+	l4d2_loot_chances[loot_s_chance_upgrades] = CreateConVar("l4d2_loot_s_chance_upgrades", "10");
+	l4d2_loot_chances[loot_s_chance_misc] = CreateConVar("l4d2_loot_s_chance_misc", "10");
+	l4d2_loot_chances[loot_s_chance_misc2] = CreateConVar("l4d2_loot_s_chance_misc2", "10");
+	l4d2_loot_chances[loot_s_chance_nodrop] = CreateConVar("l4d2_loot_s_chance_nodrop", "20");
 
-	l4d2_loot_chances[loot_j_chance_health] = CreateConVar("l4d2_loot_j_chance_health", "35", "");
-	l4d2_loot_chances[loot_j_chance_melee] = CreateConVar("l4d2_loot_j_chance_melee", "10", "");
-	l4d2_loot_chances[loot_j_chance_bullet] = CreateConVar("l4d2_loot_j_chance_bullet", "50", "");
-	l4d2_loot_chances[loot_j_chance_explosive] = CreateConVar("l4d2_loot_j_chance_explosive", "1", "");
-	l4d2_loot_chances[loot_j_chance_throw] = CreateConVar("l4d2_loot_j_chance_throw", "0", "");
-	l4d2_loot_chances[loot_j_chance_upgrades] = CreateConVar("l4d2_loot_j_chance_upgrades", "0", "");
-	l4d2_loot_chances[loot_j_chance_misc] = CreateConVar("l4d2_loot_j_chance_misc", "0", "");
-	l4d2_loot_chances[loot_j_chance_misc2] = CreateConVar("l4d2_loot_j_chance_misc2", "10", "");
-	l4d2_loot_chances[loot_j_chance_nodrop] = CreateConVar("l4d2_loot_j_chance_nodrop", "20", "");
+	l4d2_loot_chances[loot_c_chance_health] = CreateConVar("l4d2_loot_c_chance_health", "35");
+	l4d2_loot_chances[loot_c_chance_melee] = CreateConVar("l4d2_loot_c_chance_melee", "0");
+	l4d2_loot_chances[loot_c_chance_bullet] = CreateConVar("l4d2_loot_c_chance_bullet", "10");
+	l4d2_loot_chances[loot_c_chance_explosive] = CreateConVar("l4d2_loot_c_chance_explosive", "1");
+	l4d2_loot_chances[loot_c_chance_throw] = CreateConVar("l4d2_loot_c_chance_throw", "0");
+	l4d2_loot_chances[loot_c_chance_upgrades] = CreateConVar("l4d2_loot_c_chance_upgrades", "20");
+	l4d2_loot_chances[loot_c_chance_misc] = CreateConVar("l4d2_loot_c_chance_misc", "0");
+	l4d2_loot_chances[loot_c_chance_misc2] = CreateConVar("l4d2_loot_c_chance_misc2", "10");
+	l4d2_loot_chances[loot_c_chance_nodrop] = CreateConVar("l4d2_loot_c_chance_nodrop", "20");
 
-	l4d2_loot_chances[loot_t_chance_health] = CreateConVar("l4d2_loot_t_chance_health", "45", "");
-	l4d2_loot_chances[loot_t_chance_melee] = CreateConVar("l4d2_loot_t_chance_melee", "20", "");
-	l4d2_loot_chances[loot_t_chance_bullet] = CreateConVar("l4d2_loot_t_chance_bullet", "75", "");
-	l4d2_loot_chances[loot_t_chance_explosive] = CreateConVar("l4d2_loot_t_chance_explosive", "3", "");
-	l4d2_loot_chances[loot_t_chance_throw] = CreateConVar("l4d2_loot_t_chance_throw", "50", "");
-	l4d2_loot_chances[loot_t_chance_upgrades] = CreateConVar("l4d2_loot_t_chance_upgrades", "10", "");
-	l4d2_loot_chances[loot_t_chance_misc] = CreateConVar("l4d2_loot_t_chance_misc", "10", "");
-	l4d2_loot_chances[loot_t_chance_misc2] = CreateConVar("l4d2_loot_t_chance_misc2", "1", "");
-	l4d2_loot_chances[loot_t_chance_nodrop] = CreateConVar("l4d2_loot_t_chance_nodrop", "0", "");
+	l4d2_loot_chances[loot_sp_chance_health] = CreateConVar("l4d2_loot_sp_chance_health", "35");
+	l4d2_loot_chances[loot_sp_chance_melee] = CreateConVar("l4d2_loot_sp_chance_melee", "0");
+	l4d2_loot_chances[loot_sp_chance_bullet] = CreateConVar("l4d2_loot_sp_chance_bullet", "0");
+	l4d2_loot_chances[loot_sp_chance_explosive] = CreateConVar("l4d2_loot_sp_chance_explosive", "1");
+	l4d2_loot_chances[loot_sp_chance_throw] = CreateConVar("l4d2_loot_sp_chance_throw", "0");
+	l4d2_loot_chances[loot_sp_chance_upgrades] = CreateConVar("l4d2_loot_sp_chance_upgrades", "20");
+	l4d2_loot_chances[loot_sp_chance_misc] = CreateConVar("l4d2_loot_sp_chance_misc", "50");
+	l4d2_loot_chances[loot_sp_chance_misc2] = CreateConVar("l4d2_loot_sp_chance_misc2", "10");
+	l4d2_loot_chances[loot_sp_chance_nodrop] = CreateConVar("l4d2_loot_sp_chance_nodrop", "20");
 
-	l4d2_loot_items[loot_first_aid_kit] = CreateConVar("l4d2_loot_first_aid_kit", "6", "");
-	l4d2_loot_items[loot_defibrillator] = CreateConVar("l4d2_loot_defibrillator", "1", "");
-	l4d2_loot_items[loot_pain_pills] = CreateConVar("l4d2_loot_pain_pills", "15", "");
-	l4d2_loot_items[loot_adrenaline] = CreateConVar("l4d2_loot_adrenaline", "15", "");
+	l4d2_loot_chances[loot_j_chance_health] = CreateConVar("l4d2_loot_j_chance_health", "35");
+	l4d2_loot_chances[loot_j_chance_melee] = CreateConVar("l4d2_loot_j_chance_melee", "10");
+	l4d2_loot_chances[loot_j_chance_bullet] = CreateConVar("l4d2_loot_j_chance_bullet", "50");
+	l4d2_loot_chances[loot_j_chance_explosive] = CreateConVar("l4d2_loot_j_chance_explosive", "1");
+	l4d2_loot_chances[loot_j_chance_throw] = CreateConVar("l4d2_loot_j_chance_throw", "0");
+	l4d2_loot_chances[loot_j_chance_upgrades] = CreateConVar("l4d2_loot_j_chance_upgrades", "0");
+	l4d2_loot_chances[loot_j_chance_misc] = CreateConVar("l4d2_loot_j_chance_misc", "0");
+	l4d2_loot_chances[loot_j_chance_misc2] = CreateConVar("l4d2_loot_j_chance_misc2", "10");
+	l4d2_loot_chances[loot_j_chance_nodrop] = CreateConVar("l4d2_loot_j_chance_nodrop", "20");
 
-	l4d2_loot_items[loot_cricket_bat] = CreateConVar("l4d2_loot_cricket_bat", "10", "");
-	l4d2_loot_items[loot_crowbar] = CreateConVar("l4d2_loot_crowbar", "10", "");
-	l4d2_loot_items[loot_electric_guitar] = CreateConVar("l4d2_loot_electric_guitar", "10", "");
-	l4d2_loot_items[loot_chainsaw] = CreateConVar("l4d2_loot_chainsaw", "1", "");
-	l4d2_loot_items[loot_katana] = CreateConVar("l4d2_loot_katana", "6", "");
-	l4d2_loot_items[loot_machete] = CreateConVar("l4d2_loot_machete", "8", "");
-	l4d2_loot_items[loot_tonfa] = CreateConVar("l4d2_loot_tonfa", "10", "");
-	l4d2_loot_items[loot_frying_pan] = CreateConVar("l4d2_loot_frying_pan", "10", "");
-	l4d2_loot_items[loot_fireaxe] = CreateConVar("l4d2_loot_fireaxe", "5", "");
-	l4d2_loot_items[loot_golfclub] = CreateConVar("l4d2_loot_golfclub", "7", "");
-	l4d2_loot_items[loot_riotshield] = CreateConVar("l4d2_loot_riotshield", "10", "");
-	l4d2_loot_items[loot_shovel] = CreateConVar("l4d2_loot_shovel", "10", "");
-	l4d2_loot_items[loot_pitchfork] = CreateConVar("l4d2_loot_pitchfork", "10", "");
-	l4d2_loot_items[loot_baseball_bat] = CreateConVar("l4d2_loot_baseball_bat", "10", "");
-	l4d2_loot_items[loot_knife] = CreateConVar("l4d2_loot_knife", "2", "");
-	l4d2_loot_items[loot_pistol] = CreateConVar("l4d2_loot_pistol", "0", "");
-	l4d2_loot_items[loot_pistol_magnum] = CreateConVar("l4d2_loot_pistol_magnum", "10", "");
-	l4d2_loot_items[loot_smg] = CreateConVar("l4d2_loot_smg", "10", "");
-	l4d2_loot_items[loot_smg_silenced] = CreateConVar("l4d2_loot_smg_silenced", "10", "");
-	l4d2_loot_items[loot_pumpshotgun] = CreateConVar("l4d2_loot_pumpshotgun", "10", "");
-	l4d2_loot_items[loot_shotgun_chrome] = CreateConVar("l4d2_loot_shotgun_chrome", "10", "");
-	l4d2_loot_items[loot_shotgun_spas] = CreateConVar("l4d2_loot_shotgun_spas", "2", "");
-	l4d2_loot_items[loot_autoshotgun] = CreateConVar("l4d2_loot_autoshotgun", "10", "");
-	l4d2_loot_items[loot_sniper_military] = CreateConVar("l4d2_loot_sniper_military", "9", "");
-	l4d2_loot_items[loot_hunting_rifle] = CreateConVar("l4d2_loot_hunting_rifle", "10", "");
-	l4d2_loot_items[loot_rifle] = CreateConVar("l4d2_loot_rifle", "10", "");
-	l4d2_loot_items[loot_rifle_desert] = CreateConVar("l4d2_loot_rifle_desert", "10", "");
-	l4d2_loot_items[loot_rifle_ak47] = CreateConVar("l4d2_loot_rifle_ak47", "1", "");
-	l4d2_loot_items[loot_rifle_m60] = CreateConVar("l4d2_loot_rifle_m60", "4", "");
-	l4d2_loot_items[loot_smg_mp5] = CreateConVar("l4d2_loot_smg_mp5", "10", "");
-	l4d2_loot_items[loot_sniper_scout] = CreateConVar("l4d2_loot_sniper_scout", "1", "");
-	l4d2_loot_items[loot_sniper_awp] = CreateConVar("l4d2_loot_sniper_awp", "1", "");
-	l4d2_loot_items[loot_rifle_sg552] = CreateConVar("l4d2_loot_rifle_sg552", "10", "");
-	l4d2_loot_items[loot_grenade_launcher] = CreateConVar("l4d2_loot_grenade_launcher", "1", "");
+	l4d2_loot_chances[loot_t_chance_health] = CreateConVar("l4d2_loot_t_chance_health", "45");
+	l4d2_loot_chances[loot_t_chance_melee] = CreateConVar("l4d2_loot_t_chance_melee", "20");
+	l4d2_loot_chances[loot_t_chance_bullet] = CreateConVar("l4d2_loot_t_chance_bullet", "75");
+	l4d2_loot_chances[loot_t_chance_explosive] = CreateConVar("l4d2_loot_t_chance_explosive", "3");
+	l4d2_loot_chances[loot_t_chance_throw] = CreateConVar("l4d2_loot_t_chance_throw", "50");
+	l4d2_loot_chances[loot_t_chance_upgrades] = CreateConVar("l4d2_loot_t_chance_upgrades", "10");
+	l4d2_loot_chances[loot_t_chance_misc] = CreateConVar("l4d2_loot_t_chance_misc", "10");
+	l4d2_loot_chances[loot_t_chance_misc2] = CreateConVar("l4d2_loot_t_chance_misc2", "1");
+	l4d2_loot_chances[loot_t_chance_nodrop] = CreateConVar("l4d2_loot_t_chance_nodrop", "0");
 
-	l4d2_loot_items[loot_pipe_bomb] = CreateConVar("l4d2_loot_pipe_bomb", "3", "");
-	l4d2_loot_items[loot_molotov] = CreateConVar("l4d2_loot_molotov", "4", "");
-	l4d2_loot_items[loot_vomitjar] = CreateConVar("l4d2_loot_vomitjar", "5", "");
+	l4d2_loot_items[loot_first_aid_kit] = CreateConVar("l4d2_loot_first_aid_kit", "6");
+	l4d2_loot_items[loot_defibrillator] = CreateConVar("l4d2_loot_defibrillator", "1");
+	l4d2_loot_items[loot_pain_pills] = CreateConVar("l4d2_loot_pain_pills", "15");
+	l4d2_loot_items[loot_adrenaline] = CreateConVar("l4d2_loot_adrenaline", "15");
 
-	l4d2_loot_items[loot_upgradepack_exp] = CreateConVar("l4d2_loot_upgradepack_exp", "1", "");
-	l4d2_loot_items[loot_upgradepack_inc] = CreateConVar("l4d2_loot_upgradepack_inc", "1", "");
+	l4d2_loot_items[loot_cricket_bat] = CreateConVar("l4d2_loot_cricket_bat", "10");
+	l4d2_loot_items[loot_crowbar] = CreateConVar("l4d2_loot_crowbar", "10");
+	l4d2_loot_items[loot_electric_guitar] = CreateConVar("l4d2_loot_electric_guitar", "10");
+	l4d2_loot_items[loot_chainsaw] = CreateConVar("l4d2_loot_chainsaw", "1");
+	l4d2_loot_items[loot_katana] = CreateConVar("l4d2_loot_katana", "6");
+	l4d2_loot_items[loot_machete] = CreateConVar("l4d2_loot_machete", "8");
+	l4d2_loot_items[loot_tonfa] = CreateConVar("l4d2_loot_tonfa", "10");
+	l4d2_loot_items[loot_frying_pan] = CreateConVar("l4d2_loot_frying_pan", "10");
+	l4d2_loot_items[loot_fireaxe] = CreateConVar("l4d2_loot_fireaxe", "5");
+	l4d2_loot_items[loot_golfclub] = CreateConVar("l4d2_loot_golfclub", "7");
+	l4d2_loot_items[loot_riotshield] = CreateConVar("l4d2_loot_riotshield", "10");
+	l4d2_loot_items[loot_shovel] = CreateConVar("l4d2_loot_shovel", "10");
+	l4d2_loot_items[loot_pitchfork] = CreateConVar("l4d2_loot_pitchfork", "10");
+	l4d2_loot_items[loot_baseball_bat] = CreateConVar("l4d2_loot_baseball_bat", "10");
+	l4d2_loot_items[loot_knife] = CreateConVar("l4d2_loot_knife", "2");
+	l4d2_loot_items[loot_pistol] = CreateConVar("l4d2_loot_pistol", "0");
+	l4d2_loot_items[loot_pistol_magnum] = CreateConVar("l4d2_loot_pistol_magnum", "10");
+	l4d2_loot_items[loot_smg] = CreateConVar("l4d2_loot_smg", "10");
+	l4d2_loot_items[loot_smg_silenced] = CreateConVar("l4d2_loot_smg_silenced", "10");
+	l4d2_loot_items[loot_pumpshotgun] = CreateConVar("l4d2_loot_pumpshotgun", "10");
+	l4d2_loot_items[loot_shotgun_chrome] = CreateConVar("l4d2_loot_shotgun_chrome", "10");
+	l4d2_loot_items[loot_shotgun_spas] = CreateConVar("l4d2_loot_shotgun_spas", "2");
+	l4d2_loot_items[loot_autoshotgun] = CreateConVar("l4d2_loot_autoshotgun", "10");
+	l4d2_loot_items[loot_sniper_military] = CreateConVar("l4d2_loot_sniper_military", "9");
+	l4d2_loot_items[loot_hunting_rifle] = CreateConVar("l4d2_loot_hunting_rifle", "10");
+	l4d2_loot_items[loot_rifle] = CreateConVar("l4d2_loot_rifle", "10");
+	l4d2_loot_items[loot_rifle_desert] = CreateConVar("l4d2_loot_rifle_desert", "10");
+	l4d2_loot_items[loot_rifle_ak47] = CreateConVar("l4d2_loot_rifle_ak47", "1");
+	l4d2_loot_items[loot_rifle_m60] = CreateConVar("l4d2_loot_rifle_m60", "4");
+	l4d2_loot_items[loot_smg_mp5] = CreateConVar("l4d2_loot_smg_mp5", "10");
+	l4d2_loot_items[loot_sniper_scout] = CreateConVar("l4d2_loot_sniper_scout", "1");
+	l4d2_loot_items[loot_sniper_awp] = CreateConVar("l4d2_loot_sniper_awp", "1");
+	l4d2_loot_items[loot_rifle_sg552] = CreateConVar("l4d2_loot_rifle_sg552", "10");
+	l4d2_loot_items[loot_grenade_launcher] = CreateConVar("l4d2_loot_grenade_launcher", "1");
 
-	l4d2_loot_items[loot_fireworkcrate] = CreateConVar("l4d2_loot_fireworkcrate", "1", "");
-	l4d2_loot_items[loot_gascan] = CreateConVar("l4d2_loot_gascan", "0", "");
-	l4d2_loot_items[loot_oxygentank] = CreateConVar("l4d2_loot_oxygentank", "0", "");
-	l4d2_loot_items[loot_propanetank] = CreateConVar("l4d2_loot_propanetank", "0", "");
+	l4d2_loot_items[loot_pipe_bomb] = CreateConVar("l4d2_loot_pipe_bomb", "3");
+	l4d2_loot_items[loot_molotov] = CreateConVar("l4d2_loot_molotov", "4");
+	l4d2_loot_items[loot_vomitjar] = CreateConVar("l4d2_loot_vomitjar", "5");
 
-	l4d2_loot_items[loot_gnome] = CreateConVar("l4d2_loot_gnome", "100", "");
-	l4d2_loot_items[loot_cola_bottles] = CreateConVar("l4d2_loot_cola_bottles", "0", "");
+	l4d2_loot_items[loot_upgradepack_exp] = CreateConVar("l4d2_loot_upgradepack_exp", "1");
+	l4d2_loot_items[loot_upgradepack_inc] = CreateConVar("l4d2_loot_upgradepack_inc", "1");
+
+	l4d2_loot_items[loot_fireworkcrate] = CreateConVar("l4d2_loot_fireworkcrate", "1");
+	l4d2_loot_items[loot_gascan] = CreateConVar("l4d2_loot_gascan", "0");
+	l4d2_loot_items[loot_oxygentank] = CreateConVar("l4d2_loot_oxygentank", "0");
+	l4d2_loot_items[loot_propanetank] = CreateConVar("l4d2_loot_propanetank", "0");
+
+	l4d2_loot_items[loot_gnome] = CreateConVar("l4d2_loot_gnome", "100");
+	l4d2_loot_items[loot_cola_bottles] = CreateConVar("l4d2_loot_cola_bottles", "0");
 
 	int i;
 	for (i = 0; i < DropChances; i++)
 	{
-		HookConVarChange(l4d2_loot_chances[i], OnConVarChanceChange);
+		l4d2_loot_chances[i].AddChangeHook(OnConVarChanceChange);
 		cvar_value_chance[i] = l4d2_loot_chances[i].IntValue;
 	}
 	for (i = 0; i < WeaponsLoot; i++)
 	{
-		HookConVarChange(l4d2_loot_items[i], OnConVarLootChange);
+		l4d2_loot_items[i].AddChangeHook(OnConVarLootChange);
 		cvar_value_loot[i] = l4d2_loot_items[i].IntValue;
 	}
 }
@@ -311,7 +311,7 @@ void OnConVarChanceChange(ConVar cvar, const char[] oldVal, const char[] newVal)
 {
 	if (StringToInt(newVal) == StringToInt(oldVal))
 		return;
-	
+
 	for (int i = 0; i < DropChances; i++)
 	{
 		if (l4d2_loot_chances[i] == cvar)
@@ -325,7 +325,7 @@ void OnConVarLootChange(ConVar cvar, const char[] oldVal, const char[] newVal)
 {
 	if (StringToInt(newVal) == StringToInt(oldVal))
 		return;
-	
+
 	for (int i = 0; i < WeaponsLoot; i++)
 	{
 		if (l4d2_loot_items[i] == cvar)
@@ -337,10 +337,8 @@ void OnConVarLootChange(ConVar cvar, const char[] oldVal, const char[] newVal)
 
 void Event_PlayerDeath(Event hEvent, const char[] strName, bool DontBroadcast)
 {
-	if (NoFarm.IntValue > 0)
-	{
+	if (NoFarm.BoolValue)
 		return;
-	}
 
 	int Attacker = GetClientOfUserId(hEvent.GetInt("attacker"));
 
@@ -349,7 +347,7 @@ void Event_PlayerDeath(Event hEvent, const char[] strName, bool DontBroadcast)
 
 	if (IsFakeClient(Attacker))
 		return;
-		
+	
 	if (GetClientTeam(Attacker) != 2)
 		return;
 
@@ -360,59 +358,31 @@ void Event_PlayerDeath(Event hEvent, const char[] strName, bool DontBroadcast)
 
 	if (Attacker == Target)
 		return;
-		
+	
 	if (GetClientTeam(Target) != 3)
 		return;
 
-	if (!IsFakeClient(Target) && DropItemsFromPlayers.IntValue == 0)
+	if (!IsFakeClient(Target) && !DropItemsFromPlayers.BoolValue)
 		return;
-	
+
 	int iClass = GetEntProp(Target, Prop_Send, "m_zombieClass");
 	int count;
+
 	switch (iClass)
 	{
-		case 1:
-		{
-			count = l4d2_loot_s_drop_items.IntValue;
-			for (int i = 0; i < count; i++)
-				LootDropItem(Target, GetRandomItem(GetRandomGroup(iClass)));
-		}
-		case 2:
-		{
-			count = l4d2_loot_b_drop_items.IntValue;
-			for (int i = 0; i < count; i++)
-				LootDropItem(Target, GetRandomItem(GetRandomGroup(iClass)));
-		}
-		case 3:
-		{
-			count = l4d2_loot_h_drop_items.IntValue;
-			for (int i = 0; i < count; i++)
-				LootDropItem(Target, GetRandomItem(GetRandomGroup(iClass)));
-		}
-		case 4:
-		{
-			count = l4d2_loot_sp_drop_items.IntValue;
-			for (int i = 0; i < count; i++)
-				LootDropItem(Target, GetRandomItem(GetRandomGroup(iClass)));
-		}
-		case 5:
-		{
-			count = l4d2_loot_j_drop_items.IntValue;
-			for (int i = 0; i < count; i++)
-				LootDropItem(Target, GetRandomItem(GetRandomGroup(iClass)));
-		}
-		case 6:
-		{
-			count = l4d2_loot_c_drop_items.IntValue;
-			for (int i = 0; i < count; i++)
-				LootDropItem(Target, GetRandomItem(GetRandomGroup(iClass)));
-		}
-		case 8:
-		{
-			count = l4d2_loot_t_drop_items.IntValue;
-			for (int i = 0; i < count; i++)
-				LootDropItem(Target, GetRandomItem(GetRandomGroup(iClass)));
-		}
+		case 1: count = l4d2_loot_s_drop_items.IntValue;
+		case 2: count = l4d2_loot_b_drop_items.IntValue;
+		case 3: count = l4d2_loot_h_drop_items.IntValue;
+		case 4: count = l4d2_loot_sp_drop_items.IntValue;
+		case 5: count = l4d2_loot_j_drop_items.IntValue;
+		case 6: count = l4d2_loot_c_drop_items.IntValue;
+		case 8: count = l4d2_loot_t_drop_items.IntValue;
+		default: return;
+	}
+
+	for (int i = 0; i < count; i++)
+	{
+		LootDropItem(Target, GetRandomItem(GetRandomGroup(iClass)));
 	}
 }
 
@@ -955,10 +925,6 @@ int GetRandomGroup(const int iClass)
 				return 0;
 			}
 		}
-		default:
-		{
-			return 0;
-		}
 	}
 	return 0;
 }
@@ -969,7 +935,7 @@ int GetRandomItem(const int Group)
 	{
 		return 0;
 	}
-	
+
 	int Sum = 0;
 	switch (Group)
 	{
@@ -1412,10 +1378,6 @@ int GetRandomItem(const int Group)
 				return 0;
 			}
 		}
-		default:
-		{
-			return 0;
-		}
 	}
 	return 0;
 }
@@ -1425,14 +1387,15 @@ void LootDropItem(int client, int ItemNumber)
 	if (ItemNumber > 0)
 	{
 		char ItemName[24];
+		int iRandSkin = 0;
 		switch (ItemNumber)
 		{
 			case 1: ItemName = "first_aid_kit";
 			case 2: ItemName = "defibrillator";
 			case 3: ItemName = "pain_pills";
 			case 4: ItemName = "adrenaline";
-			case 5: ItemName = "cricket_bat";
-			case 6: ItemName = "crowbar";
+			case 5: ItemName = "cricket_bat"; // iRandSkin = 1;
+			case 6: ItemName = "crowbar"; // iRandSkin = 1;
 			case 7: ItemName = "electric_guitar";
 			case 8: ItemName = "chainsaw";
 			case 9: ItemName = "katana";
@@ -1442,20 +1405,20 @@ void LootDropItem(int client, int ItemNumber)
 			case 13: ItemName = "frying_pan";
 			case 14: ItemName = "fireaxe";
 			case 15: ItemName = "pistol";
-			case 16: ItemName = "pistol_magnum";
-			case 17: ItemName = "smg";
+			case 16: { ItemName = "pistol_magnum"; iRandSkin = 2; }
+			case 17: { ItemName = "smg"; iRandSkin = 1; }
 			case 18: ItemName = "smg_mp5"; // need precache
-			case 19: ItemName = "smg_silenced";
-			case 20: ItemName = "pumpshotgun";
-			case 21: ItemName = "shotgun_chrome";
+			case 19: { ItemName = "smg_silenced"; iRandSkin = 1; }
+			case 20: { ItemName = "pumpshotgun"; iRandSkin = 1; }
+			case 21: { ItemName = "shotgun_chrome"; iRandSkin = 1; }
 			case 22: ItemName = "shotgun_spas";
 			case 23: ItemName = "sniper_scout"; // need precache
 			case 24: ItemName = "sniper_military";
 			case 25: ItemName = "sniper_awp"; // need precache
-			case 26: ItemName = "hunting_rifle";
-			case 27: ItemName = "rifle";
+			case 26: { ItemName = "hunting_rifle"; iRandSkin = 1; }
+			case 27: { ItemName = "rifle"; iRandSkin = 2; }
 			case 28: ItemName = "rifle_desert";
-			case 29: ItemName = "rifle_ak47";
+			case 29: { ItemName = "rifle_ak47"; iRandSkin = 2; }
 			case 30: ItemName = "rifle_sg552"; // need precache
 			case 31: ItemName = "grenade_launcher";
 			case 32: ItemName = "pipe_bomb";
@@ -1465,7 +1428,7 @@ void LootDropItem(int client, int ItemNumber)
 			case 36: ItemName = "upgradepack_incendiary";
 			case 37: ItemName = "fireworkcrate";
 			case 38: ItemName = "gascan";
-			case 39: ItemName = "autoshotgun";
+			case 39: { ItemName = "autoshotgun"; iRandSkin = 1; }
 			case 40: ItemName = "knife"; // protected
 			case 41: ItemName = "oxygentank";
 			case 42: ItemName = "propanetank";
@@ -1478,6 +1441,10 @@ void LootDropItem(int client, int ItemNumber)
 			case 49: ItemName = "pitchfork"; // need precache on some maps
 		}
 
-		GivePlayerItem(client, ItemName);
+		int weapon = GivePlayerItem(client, ItemName);
+		if (iRandSkin && weapon != -1)
+		{
+			SetEntProp(weapon, Prop_Send, "m_nSkin", GetRandomInt(0, iRandSkin));
+		}
 	}
 }
