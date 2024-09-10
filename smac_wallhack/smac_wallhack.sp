@@ -426,6 +426,10 @@ void Wallhack_Enable()
 			HookEvent("player_first_spawn", Event_PlayerStateChanged, EventHookMode_Post);
 			HookEvent("ghost_spawn_time", L4D_Event_GhostSpawnTime, EventHookMode_Post);
 			HookEvent("ability_use", L4D_Event_AbilityUse, EventHookMode_Post);
+			HookEvent("charger_pummel_start", L4D_Event_AbilityUse, EventHookMode_Post);
+			HookEvent("charger_charge_start", L4D_Event_AbilityUse, EventHookMode_Post);
+			HookEvent("choke_start", L4D_Event_AbilityUse, EventHookMode_Post);
+			HookEvent("tongue_grab", L4D_Event_AbilityUse, EventHookMode_Post);
 		}
 	}
 
@@ -483,6 +487,10 @@ void Wallhack_Disable()
 			UnhookEvent("player_first_spawn", Event_PlayerStateChanged, EventHookMode_Post);
 			UnhookEvent("ghost_spawn_time", L4D_Event_GhostSpawnTime, EventHookMode_Post);
 			UnhookEvent("ability_use", L4D_Event_AbilityUse, EventHookMode_Post);
+			UnhookEvent("charger_pummel_start", L4D_Event_AbilityUse, EventHookMode_Post);
+			UnhookEvent("charger_charge_start", L4D_Event_AbilityUse, EventHookMode_Post);
+			UnhookEvent("choke_start", L4D_Event_AbilityUse, EventHookMode_Post);
+			UnhookEvent("tongue_grab", L4D_Event_AbilityUse, EventHookMode_Post);
 		}
 	}
 
