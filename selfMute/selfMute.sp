@@ -155,19 +155,20 @@ void muteTargetedPlayer(int client, int target)
 	int userid = GetClientUserId(target);
 	g_MuteList[client][target] = userid;
 	
-	int muteCount;
+	int muteCount, numPlayers;
 	for (int id = 1; id <= MaxClients; id++)
 	{
 		if (id == target) continue;
-		
-		if (g_MuteList[id][target] && IsClientConnected(id))
+		if (IsClientConnected(id))
 		{
-			if (g_MuteList[id][target] == userid)
+			if (g_MuteList[id][target] && g_MuteList[id][target] == userid)
 				muteCount++;
+			
+			numPlayers++;
 		}
 	}
 	
-	if (muteCount >= 3)
+	if (FloatCompare(float(muteCount) / float(numPlayers), 0.25) >= 0)
 	{
 		SetClientListeningFlags(target, VOICE_MUTED);
 	}
