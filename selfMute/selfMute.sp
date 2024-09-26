@@ -90,7 +90,7 @@ Action selfMute(int client, int args)
 	int TargetList[MAXPLAYERS], TargetCount; 
 	bool TargetTranslate; 
 	
-	if ((TargetCount = ProcessTargetString(strTarget, 0, TargetList, MAXPLAYERS, COMMAND_FILTER_CONNECTED|COMMAND_FILTER_NO_BOTS, 
+	if ((TargetCount = ProcessTargetString(strTarget, 0, TargetList, MAXPLAYERS, COMMAND_FILTER_CONNECTED|COMMAND_FILTER_NO_MULTI|COMMAND_FILTER_NO_BOTS, 
 	strTargetName, sizeof(strTargetName), TargetTranslate)) <= 0) 
 	{
 		ReplyToTargetError(client, TargetCount); 
