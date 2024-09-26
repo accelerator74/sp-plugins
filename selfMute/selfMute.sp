@@ -4,7 +4,7 @@
 #include <sdktools>
 #include <adminmenu>
 
-#define PLUGIN_VERSION "2.1"
+#define PLUGIN_VERSION "3.0"
 
 int g_MuteList[MAXPLAYERS+1][MAXPLAYERS+1];
 
@@ -90,7 +90,7 @@ Action selfMute(int client, int args)
 	int TargetList[MAXPLAYERS], TargetCount; 
 	bool TargetTranslate; 
 	
-	if ((TargetCount = ProcessTargetString(strTarget, client, TargetList, MAXPLAYERS, COMMAND_FILTER_CONNECTED|COMMAND_FILTER_NO_BOTS, 
+	if ((TargetCount = ProcessTargetString(strTarget, 0, TargetList, MAXPLAYERS, COMMAND_FILTER_CONNECTED|COMMAND_FILTER_NO_BOTS, 
 	strTargetName, sizeof(strTargetName), TargetTranslate)) <= 0) 
 	{
 		ReplyToTargetError(client, TargetCount); 
@@ -152,7 +152,25 @@ void muteTargetedPlayer(int client, int target)
 {
 	SetListenOverride(client, target, Listen_No);
 	PrintToChat(client, "\x04[Self-Mute]\x01 You have self-muted:\x03 %N", target);
-	g_MuteList[client][target] = GetClientUserId(target);
+	int userid = GetClientUserId(target);
+	g_MuteList[client][target] = userid;
+	
+	int muteCount;
+	for (int id = 1; id <= MaxClients; id++)
+	{
+		if (id == target) continue;
+		
+		if (g_MuteList[id][target] && IsClientConnected(id))
+		{
+			if (g_MuteList[id][target] == userid)
+				muteCount++;
+		}
+	}
+	
+	if (muteCount >= 3)
+	{
+		SetClientListeningFlags(target, VOICE_MUTED);
+	}
 }
 
 //====================================================================================================
@@ -179,7 +197,7 @@ Action selfUnmute(int client, int args)
 	int TargetList[MAXPLAYERS], TargetCount; 
 	bool TargetTranslate; 
 	
-	if ((TargetCount = ProcessTargetString(strTarget, client, TargetList, MAXPLAYERS, COMMAND_FILTER_CONNECTED|COMMAND_FILTER_NO_BOTS, 
+	if ((TargetCount = ProcessTargetString(strTarget, 0, TargetList, MAXPLAYERS, COMMAND_FILTER_CONNECTED|COMMAND_FILTER_NO_BOTS, 
 	strTargetName, sizeof(strTargetName), TargetTranslate)) <= 0) 
 	{
 		ReplyToTargetError(client, TargetCount); 
@@ -188,7 +206,7 @@ Action selfUnmute(int client, int args)
 	
 	for (int i = 0; i < TargetCount; i++) 
 	{ 
-		if(TargetList[i] > 0 && TargetList[i] != client && IsClientInGame(TargetList[i]))
+		if (TargetList[i] > 0 && TargetList[i] != client && IsClientInGame(TargetList[i]))
 		{
 			unMuteTargetedPlayer(client, TargetList[i]);
 		}
