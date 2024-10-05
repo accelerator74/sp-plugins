@@ -12,6 +12,11 @@
 Database db;
 #if defined BANS_CACHE
 StringMap hBansCache;
+
+enum struct BanData {
+	int time;
+	char reason[255];
+}
 #endif
 
 public Plugin myinfo =
@@ -74,7 +79,7 @@ public void OnMapStart()
 
 #if defined BANS_CACHE
 	char query[128];
-	FormatEx(query, sizeof(query), "SELECT steamid,time FROM `%s` WHERE time = 0 OR time > %d", TABLE_NAME, GetTime());
+	FormatEx(query, sizeof(query), "SELECT steamid,time,reason FROM `%s` WHERE time = 0 OR time > %d", TABLE_NAME, GetTime());
 	db.Query(GetValidBans, query);
 #endif
 }
@@ -159,11 +164,14 @@ void GetValidBans(Database owner, DBResultSet hQuery, const char[] error, any da
 	hBansCache.Clear();
 
 	char authid[32];
+	BanData structData;
 
 	while (hQuery.FetchRow())
 	{
 		hQuery.FetchString(0, authid, sizeof(authid));
-		hBansCache.SetValue(authid, hQuery.FetchInt(1));
+		structData.time = hQuery.FetchInt(1);
+		hQuery.FetchString(2, structData.reason, sizeof(BanData::reason));
+		hBansCache.SetArray(authid, structData, sizeof(BanData));
 	}
 }
 #endif
@@ -316,7 +324,10 @@ void AddBan(int client, const char[] authid, int time, const char[] reason)
 	db.Query(SQLErrorCheckCallback, query);
 
 #if defined BANS_CACHE
-	hBansCache.SetValue(authid, time);
+	BanData structData;
+	structData.time = time;
+	strcopy(structData.reason, sizeof(BanData::reason), reason);
+	hBansCache.SetArray(authid, structData, sizeof(BanData));
 #endif
 }
 
@@ -329,13 +340,23 @@ public bool OnClientConnect(int client, char[] rejectmsg, int maxlen)
 
 		if (GetClientAuthId(client, AuthId_Steam2, authid, sizeof(authid)))
 		{
-			int time;
+			BanData structData;
 
-			if (hBansCache.GetValue(authid, time))
+			if (hBansCache.GetArray(authid, structData, sizeof(BanData)))
 			{
+				int time = structData.time;
+
 				if (!time)
 				{
-					Format(rejectmsg, maxlen, "%T", "Permabanned player", client, authid);
+					if (structData.reason[0] != '\0')
+					{
+						Format(rejectmsg, maxlen, "%T", "Permabanned player reason", client, authid, structData.reason);
+					}
+					else
+					{
+						Format(rejectmsg, maxlen, "%T", "Permabanned player", client, authid);
+					}
+
 					return false;
 				}
 
@@ -343,7 +364,15 @@ public bool OnClientConnect(int client, char[] rejectmsg, int maxlen)
 
 				if (time > 0)
 				{
-					Format(rejectmsg, maxlen, "%T", "Banned player", client, authid, GetTimeInMinutes(time));
+					if (structData.reason[0] != '\0')
+					{
+						Format(rejectmsg, maxlen, "%T", "Banned player reason", client, authid, GetTimeInMinutes(time), structData.reason);
+					}
+					else
+					{
+						Format(rejectmsg, maxlen, "%T", "Banned player", client, authid, GetTimeInMinutes(time));
+					}
+
 					return false;
 				}
 
@@ -520,7 +549,10 @@ void PrepareBan(int client, int target, int time, const char[] reason)
 	db.Query(SQLErrorCheckCallback, query);
 
 #if defined BANS_CACHE
-	hBansCache.SetValue(authid, time);
+	BanData structData;
+	structData.time = time;
+	strcopy(structData.reason, sizeof(BanData::reason), reason);
+	hBansCache.SetArray(authid, structData, sizeof(BanData));
 #endif
 
 	if (!time)
