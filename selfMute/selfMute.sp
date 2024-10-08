@@ -168,7 +168,7 @@ void muteTargetedPlayer(int client, int target)
 		}
 	}
 	
-	if (FloatCompare(float(muteCount) / float(numPlayers), 0.25) >= 0)
+	if (FloatCompare(float(muteCount) / float(numPlayers), 0.3) >= 0)
 	{
 		SetClientListeningFlags(target, VOICE_MUTED);
 	}
@@ -258,6 +258,7 @@ int MenuHandler_UnMuteMenu(Menu menu, MenuAction action, int param1, int param2)
 
 void unMuteTargetedPlayer(int client, int target)
 {
+	if(GetListenOverride(client, target) != Listen_No) return;
 	SetListenOverride(client, target, Listen_Default);
 	PrintToChat(client, "\x04[Self-Mute]\x01 You have self-unmuted:\x03 %N", target);
 	g_MuteList[client][target] = 0;
