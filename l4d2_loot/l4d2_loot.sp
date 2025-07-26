@@ -9,7 +9,7 @@ public Plugin myinfo =
 	name = "[L4D2] Loot of Zombies",
 	author = "Accelerator & Jonny",
 	description = "Plugin drops some items from killed special-infected",
-	version = "2.2",
+	version = "2.3",
 	url = "http://forums.alliedmods.net/showthread.php?t=115763"
 }
 
@@ -25,6 +25,9 @@ ConVar l4d2_loot_c_drop_items;
 ConVar l4d2_loot_sp_drop_items;
 ConVar l4d2_loot_j_drop_items;
 ConVar l4d2_loot_t_drop_items;
+
+ArrayList MeleeDefault;
+ArrayList MeleeExtra;
 
 enum {
 	loot_first_aid_kit,
@@ -42,6 +45,7 @@ enum {
 	loot_fireaxe,
 	loot_golfclub,
 	loot_riotshield,
+	loot_melee_extra,
 	loot_baseball_bat,
 	loot_knife,
 	loot_pistol,
@@ -257,6 +261,7 @@ public void OnPluginStart()
 	l4d2_loot_items[loot_riotshield] = CreateConVar("l4d2_loot_riotshield", "10");
 	l4d2_loot_items[loot_shovel] = CreateConVar("l4d2_loot_shovel", "10");
 	l4d2_loot_items[loot_pitchfork] = CreateConVar("l4d2_loot_pitchfork", "10");
+	l4d2_loot_items[loot_melee_extra] = CreateConVar("l4d2_loot_melee_extra", "10");
 	l4d2_loot_items[loot_baseball_bat] = CreateConVar("l4d2_loot_baseball_bat", "10");
 	l4d2_loot_items[loot_knife] = CreateConVar("l4d2_loot_knife", "2");
 	l4d2_loot_items[loot_pistol] = CreateConVar("l4d2_loot_pistol", "0");
@@ -304,6 +309,41 @@ public void OnPluginStart()
 	{
 		l4d2_loot_items[i].AddChangeHook(OnConVarLootChange);
 		cvar_value_loot[i] = l4d2_loot_items[i].IntValue;
+	}
+
+	MeleeExtra = new ArrayList(ByteCountToCells(32));
+	MeleeDefault = new ArrayList(ByteCountToCells(32));
+	MeleeDefault.PushString("baseball_bat");
+	MeleeDefault.PushString("cricket_bat");
+	MeleeDefault.PushString("crowbar");
+	MeleeDefault.PushString("electric_guitar");
+	MeleeDefault.PushString("fireaxe");
+	MeleeDefault.PushString("frying_pan");
+	MeleeDefault.PushString("golfclub");
+	MeleeDefault.PushString("katana");
+	MeleeDefault.PushString("knife");
+	MeleeDefault.PushString("machete");
+	MeleeDefault.PushString("tonfa");
+	MeleeDefault.PushString("pitchfork");
+	MeleeDefault.PushString("shovel");
+	MeleeDefault.PushString("riot_shield");
+}
+
+public void OnMapStart()
+{
+	MeleeExtra.Clear();
+
+	int table = FindStringTable("MeleeWeapons");
+	int total = GetStringTableNumStrings(table);
+
+	char sMelee[32];
+	for (int i = 0; i < total; i++)
+	{
+		ReadStringTable(table, i, sMelee, sizeof(sMelee));
+		if (MeleeDefault.FindString(sMelee) == -1)
+		{
+			MeleeExtra.PushString(sMelee);
+		}
 	}
 }
 
@@ -996,6 +1036,7 @@ int GetRandomItem(const int Group)
 			Sum += cvar_value_loot[loot_shovel];
 			Sum += cvar_value_loot[loot_pitchfork];
 			Sum += cvar_value_loot[loot_golfclub];
+			Sum += MeleeExtra.Length ? cvar_value_loot[loot_melee_extra] : 0;
 			if (Sum > 0)
 			{
 				float X = 100.0 / Sum;
@@ -1089,6 +1130,15 @@ int GetRandomItem(const int Group)
 				if (Y >= A && Y < A + B)
 				{
 					return 49;
+				}
+				if (MeleeExtra.Length)
+				{
+					A = A + B;
+					B = cvar_value_loot[loot_melee_extra] * X;
+					if (Y >= A && Y < A + B)
+					{
+						return 50;
+					}
 				}
 			}
 			else
@@ -1386,7 +1436,7 @@ void LootDropItem(int client, int ItemNumber)
 {
 	if (ItemNumber > 0)
 	{
-		char ItemName[24];
+		char ItemName[32];
 		int iRandSkin = 0;
 		switch (ItemNumber)
 		{
@@ -1439,6 +1489,7 @@ void LootDropItem(int client, int ItemNumber)
 			case 47: ItemName = "cola_bottles"; // need precache on some maps
 			case 48: ItemName = "shovel"; // need precache on some maps
 			case 49: ItemName = "pitchfork"; // need precache on some maps
+			case 50: MeleeExtra.GetString(GetRandomInt(0, MeleeExtra.Length - 1), ItemName, sizeof(ItemName));
 		}
 
 		int weapon = GivePlayerItem(client, ItemName);
