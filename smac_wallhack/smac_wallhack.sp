@@ -949,7 +949,7 @@ bool IsAbleToSee(int entity,int client)
 	}
 
 	// Skip all traces if the player isn't within the field of view.
-	if (((g_Game == Engine_Left4Dead || g_Game == Engine_Left4Dead2) && GetEntDataEnt2(entity, m_lookatPlayer) == client) || IsInFieldOfView(g_vEyePos[client], g_vEyeAngles[client], g_vAbsCentre[entity]))
+	if ((m_lookatPlayer != -1 && GetEntDataEnt2(entity, m_lookatPlayer) == client) || IsInFieldOfView(g_vEyePos[client], g_vEyeAngles[client], g_vAbsCentre[entity]))
 	{
 		// Check if centre is visible.
 		if (IsPointVisible(g_vEyePos[client], g_vAbsCentre[entity]))
