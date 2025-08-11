@@ -113,6 +113,7 @@ int m_isIncapacitated = -1;
 int m_vomitStart = -1;
 int m_knockdownReason = -1;
 int m_staggerDist = -1;
+int m_lookatPlayer = -1;
 int m_pounceAttacker = -1;
 int m_tongueOwner = -1;
 int m_pounceVictim = -1;
@@ -191,6 +192,7 @@ public void OnPluginStart()
 			m_vomitStart = FindSendPropInfo("CTerrorPlayer", "m_vomitStart");
 			m_knockdownReason = FindSendPropInfo("CTerrorPlayer", "m_knockdownReason");
 			m_staggerDist = FindSendPropInfo("CTerrorPlayer", "m_staggerDist");
+			m_lookatPlayer = FindSendPropInfo("CTerrorPlayer", "m_lookatPlayer");
 			m_pounceAttacker = FindSendPropInfo("CTerrorPlayer", "m_pounceAttacker");
 			m_tongueOwner = FindSendPropInfo("CTerrorPlayer", "m_tongueOwner");
 			m_pounceVictim = FindSendPropInfo("CTerrorPlayer", "m_pounceVictim");
@@ -209,6 +211,7 @@ public void OnPluginStart()
 			m_vomitStart = FindSendPropInfo("CTerrorPlayer", "m_vomitStart");
 			m_knockdownReason = FindSendPropInfo("CTerrorPlayer", "m_knockdownReason");
 			m_staggerDist = FindSendPropInfo("CTerrorPlayer", "m_staggerDist");
+			m_lookatPlayer = FindSendPropInfo("CTerrorPlayer", "m_lookatPlayer");
 			m_pounceAttacker = FindSendPropInfo("CTerrorPlayer", "m_pounceAttacker");
 			m_tongueOwner = FindSendPropInfo("CTerrorPlayer", "m_tongueOwner");
 			m_pounceVictim = FindSendPropInfo("CTerrorPlayer", "m_pounceVictim");
@@ -946,7 +949,7 @@ bool IsAbleToSee(int entity,int client)
 	}
 
 	// Skip all traces if the player isn't within the field of view.
-	if (IsInFieldOfView(g_vEyePos[client], g_vEyeAngles[client], g_vAbsCentre[entity]))
+	if (((g_Game == Engine_Left4Dead || g_Game == Engine_Left4Dead2) && GetEntDataEnt2(entity, m_lookatPlayer) == client) || IsInFieldOfView(g_vEyePos[client], g_vEyeAngles[client], g_vAbsCentre[entity]))
 	{
 		// Check if centre is visible.
 		if (IsPointVisible(g_vEyePos[client], g_vAbsCentre[entity]))
