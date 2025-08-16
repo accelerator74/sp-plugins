@@ -356,12 +356,7 @@ void PlayerStateChanged(int userid)
 
 Action Timer_PlayerStateChanged(Handle timer, any userid)
 {
-	int client = GetClientOfUserId(userid);
-
-	if (IS_CLIENT(client) && IsClientInGame(client))
-	{
-		Wallhack_UpdateClientCache(client);
-	}
+	PlayerStateChanged(userid);
 
 	return Plugin_Stop;
 }
