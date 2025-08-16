@@ -88,7 +88,6 @@ bool g_bIsObserver[MAXPLAYERS+1];
 bool g_bIsFake[MAXPLAYERS+1];
 bool g_bProcess[MAXPLAYERS+1];
 bool g_bIgnore[MAXPLAYERS+1];
-bool g_bForceIgnore[MAXPLAYERS+1];
 
 int g_iWeaponOwner[MAX_EDICTS];
 int g_iTeam[MAXPLAYERS+1];
@@ -324,7 +323,6 @@ public void OnClientDisconnect(int client)
 	g_bIsObserver[client] = false;
 	g_bProcess[client] = false;
 	g_bIgnore[client] = false;
-	g_bForceIgnore[client] = false;
 }
 
 public void OnClientDisconnect_Post(int client)
@@ -343,7 +341,17 @@ public void OnClientDisconnect_Post(int client)
 void Event_PlayerStateChanged(Event event, const char[] name, bool dontBroadcast)
 {
 	// Not all data has been updated at this time. Wait until the next tick to update cache.
-	CreateTimer(0.001, Timer_PlayerStateChanged, event.GetInt("userid"), TIMER_FLAG_NO_MAPCHANGE);
+	RequestFrame(PlayerStateChanged, event.GetInt("userid"));
+}
+
+void PlayerStateChanged(int userid)
+{
+	int client = GetClientOfUserId(userid);
+
+	if (IS_CLIENT(client) && IsClientInGame(client))
+	{
+		Wallhack_UpdateClientCache(client);
+	}
 }
 
 Action Timer_PlayerStateChanged(Handle timer, any userid)
@@ -366,7 +374,7 @@ void Wallhack_UpdateClientCache(int client)
 	g_bProcess[client] = IsPlayerAlive(client);
 
 	// Clients that should not be tested for visibility.
-	g_bIgnore[client] = g_bForceIgnore[client] || g_bIsFake[client] || ((g_Game == Engine_Left4Dead || g_Game == Engine_Left4Dead2) && g_iTeam[client] != 2);
+	g_bIgnore[client] = g_bIsFake[client] || ((g_Game == Engine_Left4Dead || g_Game == Engine_Left4Dead2) && g_iTeam[client] != 2);
 }
 
 void OnSettingsChanged(ConVar convar, char[] oldValue, char[] newValue)
@@ -1571,7 +1579,8 @@ bool L4D_IsSurvivorBusy(int client)
 bool L4D_IsInfectedBusy(int client)
 {
 	float gt = GetGameTime();
-	return (GetEntDataFloat(client, m_vomitStart) + g_iVomitDurationPz + 0.1) > gt || 
+	return GetEntityFlags(client) & FL_ONFIRE || 
+		(GetEntDataFloat(client, m_vomitStart) + g_iVomitDurationPz + 0.1) > gt || 
 		g_fAbilityStart[client] + 5.0 > gt || 
 		GetEntDataEnt2(client, m_pounceVictim) > 0 || 
 		GetEntDataEnt2(client, m_tongueVictim) > 0;
@@ -1594,7 +1603,8 @@ bool L4D2_IsSurvivorBusy(int client)
 bool L4D2_IsInfectedBusy(int client)
 {
 	float gt = GetGameTime();
-	return GetEntData(client, m_iGlowType) == 3 || 
+	return GetEntityFlags(client) & FL_ONFIRE || 
+		GetEntData(client, m_iGlowType) == 3 || 
 		(GetEntDataFloat(client, m_vomitStart) + (IsFakeClient(client) ? g_iVomitDurationBot : g_iVomitDurationPz) + 0.1) > gt || 
 		g_fAbilityStart[client] + 5.0 > gt || 
 		GetEntDataEnt2(client, m_pummelVictim) > 0 || 
