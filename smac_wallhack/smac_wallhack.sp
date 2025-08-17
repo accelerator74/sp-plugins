@@ -338,7 +338,7 @@ public void OnClientDisconnect_Post(int client)
 void Event_PlayerStateChanged(Event event, const char[] name, bool dontBroadcast)
 {
 	// Not all data has been updated at this time. Wait until the next tick to update cache.
-	RequestFrame(PlayerStateChanged, event.GetInt("userid"));
+	RequestFrame(PlayerStateChanged, event.GetInt(name[0] == 'd' ? "subject" : "userid"));
 }
 
 void PlayerStateChanged(int userid)
@@ -427,6 +427,7 @@ void Wallhack_Enable()
 		case Engine_Left4Dead, Engine_Left4Dead2:
 		{
 			HookEvent("player_first_spawn", Event_PlayerStateChanged, EventHookMode_Post);
+			HookEvent("defibrillator_used", Event_PlayerStateChanged, EventHookMode_Post);
 			HookEvent("ghost_spawn_time", L4D_Event_GhostSpawnTime, EventHookMode_Post);
 			HookEvent("ability_use", L4D_Event_AbilityUse, EventHookMode_Post);
 			HookEvent("charger_pummel_start", L4D_Event_AbilityUse, EventHookMode_Post);
@@ -488,6 +489,7 @@ void Wallhack_Disable()
 		case Engine_Left4Dead, Engine_Left4Dead2:
 		{
 			UnhookEvent("player_first_spawn", Event_PlayerStateChanged, EventHookMode_Post);
+			UnhookEvent("defibrillator_used", Event_PlayerStateChanged, EventHookMode_Post);
 			UnhookEvent("ghost_spawn_time", L4D_Event_GhostSpawnTime, EventHookMode_Post);
 			UnhookEvent("ability_use", L4D_Event_AbilityUse, EventHookMode_Post);
 			UnhookEvent("charger_pummel_start", L4D_Event_AbilityUse, EventHookMode_Post);
