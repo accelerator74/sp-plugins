@@ -307,13 +307,13 @@ void AddBan(int client, const char[] authid, int time, const char[] reason)
 	char AdminName[128];
 	int immunity = GetAdmin(client, AdminName, sizeof(AdminName));
 
-	if (time <= 0)
-	{
-		time = 0;
-	}
-	else
+	if (time > 0)
 	{
 		time = GetTime() + (time * 60);
+	}
+	if (time < 0)
+	{
+		time = 0;
 	}
 
 	char dbReason[255];
@@ -519,6 +519,15 @@ void PrepareBan(int client, int target, int time, const char[] reason)
 
 	LogAction(client, target, "\"%L\" banned \"%L\" (minutes \"%d\") (reason \"%s\")", client, target, time, reason);
 
+	if (time > 0)
+	{
+		if (reason[0] == '\0') {
+			ShowActivity(client, "%t", "Banned player", name, time);
+		} else {
+			ShowActivity(client, "%t", "Banned player reason", name, time, reason);
+		}
+		time = GetTime() + (time * 60);
+	}
 	if (time <= 0)
 	{
 		time = 0;
@@ -527,13 +536,6 @@ void PrepareBan(int client, int target, int time, const char[] reason)
 		} else {
 			ShowActivity(client, "%t", "Permabanned player reason", name, reason);
 		}
-	} else {
-		if (reason[0] == '\0') {
-			ShowActivity(client, "%t", "Banned player", name, time);
-		} else {
-			ShowActivity(client, "%t", "Banned player reason", name, time, reason);
-		}
-		time = GetTime() + (time * 60);
 	}
 
 	db.Escape(name, name, sizeof(name));
