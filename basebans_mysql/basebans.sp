@@ -17,6 +17,8 @@ enum struct BanData {
 	int time;
 	char reason[255];
 }
+
+forward Action OnClientPreConnect(const char[] name, const char[] password, const char[] ip, const char[] steamID, char rejectReason[255]);
 #endif
 
 public Plugin myinfo =
@@ -332,6 +334,23 @@ void AddBan(int client, const char[] authid, int time, const char[] reason)
 }
 
 #if defined BANS_CACHE
+public Action OnClientPreConnect(const char[] name, const char[] password, const char[] ip, const char[] steamID, char rejectReason[255])
+{
+	bool idValid = false;
+	if (!strncmp(steamID, "STEAM_", 6) && steamID[7] == ':')
+		idValid = true;
+	else if (!strncmp(steamID, "[U:", 3))
+		idValid = true;
+
+	if (idValid)
+	{
+		if (IsSteamIDBanned(0, steamID, rejectReason, sizeof(rejectReason)))
+			return Plugin_Handled;
+	}
+
+	return Plugin_Continue;
+}
+
 public bool OnClientConnect(int client, char[] rejectmsg, int maxlen)
 {
 	if (!IsFakeClient(client))
@@ -340,48 +359,56 @@ public bool OnClientConnect(int client, char[] rejectmsg, int maxlen)
 
 		if (GetClientAuthId(client, AuthId_Steam2, authid, sizeof(authid)))
 		{
-			BanData structData;
-
-			if (hBansCache.GetArray(authid, structData, sizeof(BanData)))
-			{
-				int time = structData.time;
-
-				if (!time)
-				{
-					if (structData.reason[0] != '\0')
-					{
-						Format(rejectmsg, maxlen, "%T", "Permabanned player reason", client, authid, structData.reason);
-					}
-					else
-					{
-						Format(rejectmsg, maxlen, "%T", "Permabanned player", client, authid);
-					}
-
-					return false;
-				}
-
-				time -= GetTime();
-
-				if (time > 0)
-				{
-					if (structData.reason[0] != '\0')
-					{
-						Format(rejectmsg, maxlen, "%T", "Banned player reason", client, authid, GetTimeInMinutes(time), structData.reason);
-					}
-					else
-					{
-						Format(rejectmsg, maxlen, "%T", "Banned player", client, authid, GetTimeInMinutes(time));
-					}
-
-					return false;
-				}
-
-				hBansCache.Remove(authid);
-			}
+			if (IsSteamIDBanned(client, authid, rejectmsg, maxlen))
+				return false;
 		}
 	}
 
 	return true;
+}
+
+bool IsSteamIDBanned(int client, const char[] authid, char[] rejectmsg, int maxlen)
+{
+	BanData structData;
+
+	if (hBansCache.GetArray(authid, structData, sizeof(BanData)))
+	{
+		int time = structData.time;
+
+		if (!time)
+		{
+			if (structData.reason[0] != '\0')
+			{
+				Format(rejectmsg, maxlen, "%T", "Permabanned player reason", client, authid, structData.reason);
+			}
+			else
+			{
+				Format(rejectmsg, maxlen, "%T", "Permabanned player", client, authid);
+			}
+
+			return true;
+		}
+
+		time -= GetTime();
+
+		if (time > 0)
+		{
+			if (structData.reason[0] != '\0')
+			{
+				Format(rejectmsg, maxlen, "%T", "Banned player reason", client, authid, GetTimeInMinutes(time), structData.reason);
+			}
+			else
+			{
+				Format(rejectmsg, maxlen, "%T", "Banned player", client, authid, GetTimeInMinutes(time));
+			}
+
+			return true;
+		}
+
+		hBansCache.Remove(authid);
+	}
+
+	return false;
 }
 #endif
 
