@@ -565,7 +565,8 @@ void PrepareBan(int client, int target, int time, const char[] reason)
 		}
 	}
 
-	db.Escape(name, name, sizeof(name));
+	char dbName[128];
+	db.Escape(name, dbName, sizeof(dbName));
 
 	char AdminName[128];
 	int immunity = GetAdmin(client, AdminName, sizeof(AdminName));
@@ -574,7 +575,7 @@ void PrepareBan(int client, int target, int time, const char[] reason)
 	db.Escape(reason, dbReason, sizeof(dbReason));
 
 	char query[512];
-	FormatEx(query, sizeof(query), "INSERT IGNORE INTO `%s` (`name`,`ip`,`steamid`,`date`,`time`,`reason`,`admin`,`immunity`) VALUES ('%s','%s','%s','%d','%d','%s','%s','%i')", TABLE_NAME, name, ip, authid, GetTime(), time, dbReason, AdminName, immunity);
+	FormatEx(query, sizeof(query), "INSERT IGNORE INTO `%s` (`name`,`ip`,`steamid`,`date`,`time`,`reason`,`admin`,`immunity`) VALUES ('%s','%s','%s','%d','%d','%s','%s','%i')", TABLE_NAME, dbName, ip, authid, GetTime(), time, dbReason, AdminName, immunity);
 	db.Query(SQLErrorCheckCallback, query);
 
 #if defined BANS_CACHE
