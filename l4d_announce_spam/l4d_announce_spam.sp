@@ -9,7 +9,7 @@ public Plugin myinfo =
 	name = "[L4D] Announce Spam",
 	author = "Accelerator",
 	description = "Reduce the spam of informational gaming messages",
-	version = "1.0",
+	version = "1.1",
 	url = "https://github.com/accelerator74/sp-plugins"
 };
 
@@ -68,6 +68,11 @@ MRESReturn HitAnnouncement(DHookReturn hReturn, DHookParam hParams)
 
 			if (GetClientTeam(attacker) == 3)
 			{
+				if (GetClientTeam(victim) != 2)
+				{
+					return MRES_Ignored;
+				}
+
 				float gmtime = GetEngineTime();
 				static float fMsgTime[33][33];
 
@@ -89,7 +94,7 @@ MRESReturn HitAnnouncement(DHookReturn hReturn, DHookParam hParams)
 		default: return MRES_Ignored;
 	}
 
-	hReturn.Value = 0;
+	hReturn.Value = 1;
 	return MRES_Supercede;
 }
 
