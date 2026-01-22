@@ -9,7 +9,7 @@ public Plugin myinfo =
 	name = "[L4D] Announce Spam",
 	author = "Accelerator",
 	description = "Reduce the spam of informational gaming messages",
-	version = "1.2",
+	version = "1.3",
 	url = "https://github.com/accelerator74/sp-plugins"
 };
 
@@ -73,16 +73,41 @@ MRESReturn HitAnnouncement(DHookReturn hReturn, DHookParam hParams)
 					return MRES_Ignored;
 				}
 
-				if (GetEntProp(attacker, Prop_Send, "m_zombieClass") != 4)
+				float gmtime = GetEngineTime();
+				static int iMsgSlots[33][4];
+				static float fMsgTime[33][4];
+
+				int iMsgSlot = -1;
+				for (int i = 0; i < sizeof(iMsgSlots[]); i++)
 				{
-					return MRES_Ignored;
+					if (iMsgSlots[attacker][i] == GetClientUserId(victim))
+					{
+						iMsgSlot = i;
+						break;
+					}
 				}
 
-				static int iHitCounter[33][33];
-
-				if (iHitCounter[attacker][victim]++ % 3 == 0)
+				if (iMsgSlot != -1)
 				{
-					return MRES_Ignored;
+					if (gmtime - fMsgTime[attacker][iMsgSlot] >= 1.0)
+					{
+						fMsgTime[attacker][iMsgSlot] = gmtime;
+						return MRES_Ignored;
+					}
+				}
+
+				for (int i = 0; i < sizeof(iMsgSlots[]); i++)
+				{
+					if (
+						!iMsgSlots[attacker][i] ||
+						(GetClientOfUserId(iMsgSlots[attacker][i]) == 0) ||
+						(gmtime - fMsgTime[attacker][i] >= 2.5)
+					)
+					{
+						iMsgSlots[attacker][i] = GetClientUserId(victim);
+						fMsgTime[attacker][i] = gmtime;
+						return MRES_Ignored;
+					}
 				}
 			}
 			else
