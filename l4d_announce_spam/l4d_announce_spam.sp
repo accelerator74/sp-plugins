@@ -137,5 +137,8 @@ void Event_DontBroadcast(Event event, const char[] name, bool dontBroadcast)
 	if (!IsFakeClient(target))
 		return;
 
+	if (GetClientTeam(target) != 3)
+		return;
+
 	event.BroadcastDisabled = true;
 }
