@@ -9,7 +9,7 @@ public Plugin myinfo =
 	name = "[L4D] Announce Spam",
 	author = "Accelerator",
 	description = "Reduce the spam of informational gaming messages",
-	version = "1.3",
+	version = "1.4",
 	url = "https://github.com/accelerator74/sp-plugins"
 };
 
@@ -55,75 +55,76 @@ MRESReturn HitAnnouncement(DHookReturn hReturn, DHookParam hParams)
 {
 	int iMsgType = hParams.GetObjectVar(1, 0, ObjectValueType_Int);
 
-	switch (iMsgType)
+	if (iMsgType > 6 && iMsgType < 15)
 	{
-		case 7, 9: { // AssistedAgainst, Hit
-			int victim = hParams.GetObjectVar(1, 4, ObjectValueType_CBaseEntityPtr);
-			int attacker = hParams.GetObjectVar(1, 8, ObjectValueType_CBaseEntityPtr);
+		int victim = hParams.GetObjectVar(1, 4, ObjectValueType_CBaseEntityPtr);
+		int attacker = hParams.GetObjectVar(1, 8, ObjectValueType_CBaseEntityPtr);
 
-			if (victim < 1 || attacker < 1)
+		if (victim < 1 || attacker < 1)
+		{
+			return MRES_Ignored;
+		}
+
+		if (GetClientTeam(attacker) == 3)
+		{
+			if (GetClientTeam(victim) != 2)
 			{
 				return MRES_Ignored;
 			}
 
-			if (GetClientTeam(attacker) == 3)
+			int iMsgSlot = -1;
+			float gmtime = GetEngineTime();
+
+			static int iMsgSlots[4];
+			static float fMsgTime[4];
+
+			for (int i = 0; i < sizeof(iMsgSlots); i++)
 			{
-				if (GetClientTeam(victim) != 2)
+				if (iMsgSlots[i] == GetClientUserId(victim))
 				{
+					iMsgSlot = i;
+					break;
+				}
+			}
+
+			if (iMsgSlot != -1)
+			{
+				if (gmtime - fMsgTime[iMsgSlot] >= 1.0)
+				{
+					fMsgTime[iMsgSlot] = gmtime;
 					return MRES_Ignored;
 				}
+			}
 
-				float gmtime = GetEngineTime();
-				static int iMsgSlots[33][4];
-				static float fMsgTime[33][4];
-
-				int iMsgSlot = -1;
-				for (int i = 0; i < sizeof(iMsgSlots[]); i++)
-				{
-					if (iMsgSlots[attacker][i] == GetClientUserId(victim))
-					{
-						iMsgSlot = i;
-						break;
-					}
-				}
-
-				if (iMsgSlot != -1)
-				{
-					if (gmtime - fMsgTime[attacker][iMsgSlot] >= 1.0)
-					{
-						fMsgTime[attacker][iMsgSlot] = gmtime;
-						return MRES_Ignored;
-					}
-				}
-
-				for (int i = 0; i < sizeof(iMsgSlots[]); i++)
+			if (iMsgSlot == -1)
+			{
+				for (int i = 0; i < sizeof(iMsgSlots); i++)
 				{
 					if (
-						!iMsgSlots[attacker][i] ||
-						(GetClientOfUserId(iMsgSlots[attacker][i]) == 0) ||
-						(gmtime - fMsgTime[attacker][i] >= 2.5)
+						!iMsgSlots[i] ||
+						(GetClientOfUserId(iMsgSlots[i]) == 0) ||
+						(gmtime - fMsgTime[i] >= 2.5)
 					)
 					{
-						iMsgSlots[attacker][i] = GetClientUserId(victim);
-						fMsgTime[attacker][i] = gmtime;
+						iMsgSlots[i] = GetClientUserId(victim);
+						fMsgTime[i] = gmtime;
 						return MRES_Ignored;
 					}
 				}
 			}
-			else
-			{
-				if (iMsgType != 7)
-				{
-					return MRES_Ignored;
-				}
-			}
+
+			hReturn.Value = 1;
+			return MRES_Supercede;
 		}
-		case 15, 18, 19: {} // Saved, Protected, Rescued
-		default: return MRES_Ignored;
 	}
 
-	hReturn.Value = 1;
-	return MRES_Supercede;
+	if (iMsgType == 15 || iMsgType == 18 || iMsgType == 19)
+	{
+		hReturn.Value = 1;
+		return MRES_Supercede;
+	}
+
+	return MRES_Ignored;
 }
 
 void Event_DontBroadcast(Event event, const char[] name, bool dontBroadcast)
