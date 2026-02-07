@@ -277,7 +277,7 @@ void PrintTopFrags(int client = 0)
 
     SortCustom2D(data, count, SortByDamageDesc);
 
-    char msg[192];
+    char msg[512];
     FormatEx(msg, sizeof(msg), "Frags: ");
 
     int printed = 0;
@@ -314,7 +314,7 @@ void PrintTopTankDamage(bool killed)
     if (count == 0)
         return;
 
-    char msg[192];
+    char msg[512];
     FormatEx(msg, sizeof(msg), "{green}Tank(s){default} %s by: ",
         killed ? "was killed" : "was damaged");
 
@@ -346,7 +346,7 @@ void PrintTopWitchDamage()
     if (count == 0)
         return;
 
-    char msg[192];
+    char msg[512];
     FormatEx(msg, sizeof(msg), "{green}Witch{default} was killed by: ");
 
     bool first = true;
