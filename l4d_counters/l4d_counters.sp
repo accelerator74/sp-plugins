@@ -4,7 +4,7 @@
 #include <sourcemod>
 #include <colors>
 
-#define PLUGIN_VERSION      "1.2.1"
+#define PLUGIN_VERSION      "1.2.2"
 #define MAX_LINE_WIDTH      64
 #define L4D_MAXPLAYERS      32
 #define MAX_TOP_PLAYERS     6
@@ -27,7 +27,7 @@ int g_iTankDamage [L4D_MAXPLAYERS + 1];
 int g_iWitchDamage[L4D_MAXPLAYERS + 1];
 
 bool g_bAllowPrints;
-float g_iLastTankSpawnTime;
+bool g_bTankFrustrated;
 
 public Plugin myinfo =
 {
@@ -47,6 +47,8 @@ public void OnPluginStart()
 
     HookEvent("round_start",        Event_RoundStart);
     HookEvent("round_end",          Event_RoundEnd);
+    HookEvent("finale_win",         Event_RoundEnd);
+    HookEvent("map_transition",     Event_RoundEnd);
     HookEvent("player_death",       Event_PlayerDeath);
     HookEvent("player_incapacitated", Event_PlayerIncap);
     HookEvent("player_hurt",        Event_PlayerHurt);
@@ -86,7 +88,7 @@ void ResetAllCounters()
         g_iWitchDamage[i] = 0;
     }
     g_bAllowPrints = true;
-    g_iLastTankSpawnTime = 0.0;
+    g_bTankFrustrated = false;
 }
 
 Action Cmd_ShowFrags(int client, int args)
@@ -126,7 +128,7 @@ void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 
 void Event_TankFrustrated(Event event, const char[] name, bool dontBroadcast)
 {
-    g_iLastTankSpawnTime = GetGameTime();
+    g_bTankFrustrated = true;
 }
 
 void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
@@ -140,7 +142,10 @@ void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
     // Tank killed
     if (IsTank(victim))
     {
-        RequestFrame(OnTankKilled, attacker);
+        if (!g_bTankFrustrated)
+            RequestFrame(OnTankKilled, attacker);
+        else
+            g_bTankFrustrated = false;
         return;
     }
 
@@ -229,10 +234,6 @@ void Event_WitchKilled(Event event, const char[] name, bool dontBroadcast)
 void OnTankKilled(int attacker)
 {
     if (!g_cvShowTankDamage.BoolValue)
-        return;
-
-    // Too fast after spawn → probably not real kill
-    if (g_iLastTankSpawnTime + 5.0 > GetGameTime())
         return;
 
     if (IsAnyTankAlive())
@@ -483,6 +484,7 @@ void ResetKills()
 
 void ResetTankDamage()
 {
+    g_bTankFrustrated = false;
     for (int i = 0; i <= MaxClients; i++)
         g_iTankDamage[i] = 0;
 }
