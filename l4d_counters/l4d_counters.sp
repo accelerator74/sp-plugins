@@ -270,16 +270,15 @@ void PrintTopFrags(int client = 0)
     char msg[256];
     FormatEx(msg, sizeof(msg), "Frags: ");
 
-    int printed = 0;
+    int id, frags, printed = 0;
     bool first = true;
 
     for (int i = 0; i < count && printed < MAX_TOP_PLAYERS; i++)
     {
-        int id   = data[i][0];
-        int frags = data[i][1];
-
+        id   = data[i][0];
+        frags = data[i][1];
         if (!first) Format(msg, sizeof(msg), "%s, ", msg);
-        Format(msg, sizeof(msg), "%s{blue}%N{default}: %d", msg, id, frags);
+        Format(msg, sizeof(msg), "%s{blue}%N{default} %d", msg, id, frags);
         first = false;
         printed++;
     }
@@ -305,17 +304,16 @@ void PrintTopTankDamage(bool killed)
         return;
 
     char msg[256];
-    FormatEx(msg, sizeof(msg), "{green}Tank(s){default} %s by: ",
+    FormatEx(msg, sizeof(msg), "{green}Tank(s){default} %s by ",
         killed ? "was killed" : "was damaged");
 
+    int id, dmg, printed = 0;
     bool first = true;
-    int printed = 0;
 
     for (int i = 0; i < count && printed < MAX_TOP_PLAYERS; i++)
     {
-        int id = data[i][0];
-        int dmg = data[i][1];
-
+        id = data[i][0];
+        dmg = data[i][1];
         if (!first) Format(msg, sizeof(msg), "%s, ", msg);
         Format(msg, sizeof(msg), "%s{blue}%N{default}: %d", msg, id, dmg);
         first = false;
@@ -337,16 +335,15 @@ void PrintTopWitchDamage()
         return;
 
     char msg[256];
-    FormatEx(msg, sizeof(msg), "{green}Witch{default} was killed by: ");
+    FormatEx(msg, sizeof(msg), "{green}Witch{default} was killed by ");
 
+    int id, dmg, printed = 0;
     bool first = true;
-    int printed = 0;
 
     for (int i = 0; i < count && printed < MAX_TOP_PLAYERS; i++)
     {
-        int id = data[i][0];
-        int dmg = data[i][1];
-
+        id = data[i][0];
+        dmg = data[i][1];
         if (!first) Format(msg, sizeof(msg), "%s, ", msg);
         Format(msg, sizeof(msg), "%s{blue}%N{default}: %d", msg, id, dmg);
         first = false;
@@ -397,14 +394,14 @@ int CollectTopDamage(const int[] damageArray, int[][] data)
 
 int GetAllTankHP(char[] buffer, int maxlen)
 {
-    int count = 0;
+    int hp, count = 0;
 
     for (int i = 1; i <= MaxClients; i++)
     {
         if (!IsTank(i) || !IsPlayerAlive(i) || IsIncapacitated(i))
             continue;
 
-        int hp = GetClientHealth(i);
+        hp = GetClientHealth(i);
         if (hp <= 0)
             continue;
 
