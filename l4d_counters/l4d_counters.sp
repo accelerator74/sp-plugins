@@ -7,7 +7,7 @@
 #define PLUGIN_VERSION      "1.2.2"
 #define MAX_LINE_WIDTH      64
 #define L4D_MAXPLAYERS      32
-#define MAX_TOP_PLAYERS     6
+#define MAX_TOP_PLAYERS     5
 
 #define TEAM_SPECTATORS     1
 #define TEAM_SURVIVORS      2
@@ -27,7 +27,6 @@ int g_iTankDamage [L4D_MAXPLAYERS + 1];
 int g_iWitchDamage[L4D_MAXPLAYERS + 1];
 
 bool g_bAllowPrints;
-bool g_bTankFrustrated;
 
 public Plugin myinfo =
 {
@@ -54,7 +53,6 @@ public void OnPluginStart()
     HookEvent("player_hurt",        Event_PlayerHurt);
     HookEvent("infected_hurt",      Event_InfectedHurt, EventHookMode_Post);
     HookEvent("witch_killed",       Event_WitchKilled,  EventHookMode_Post);
-    HookEvent("tank_frustrated",    Event_TankFrustrated);
 
     RegConsoleCmd("sm_frags", Cmd_ShowFrags, "Show current frags");
 
@@ -88,7 +86,6 @@ void ResetAllCounters()
         g_iWitchDamage[i] = 0;
     }
     g_bAllowPrints = true;
-    g_bTankFrustrated = false;
 }
 
 Action Cmd_ShowFrags(int client, int args)
@@ -126,11 +123,6 @@ void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
     g_bAllowPrints = false;
 }
 
-void Event_TankFrustrated(Event event, const char[] name, bool dontBroadcast)
-{
-    g_bTankFrustrated = true;
-}
-
 void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
     int victim   = GetClientOfUserId(event.GetInt("userid"));
@@ -142,10 +134,7 @@ void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
     // Tank killed
     if (IsTank(victim))
     {
-        if (!g_bTankFrustrated)
-            RequestFrame(OnTankKilled, attacker);
-        else
-            g_bTankFrustrated = false;
+        RequestFrame(OnTankKilled, attacker);
         return;
     }
 
@@ -278,7 +267,7 @@ void PrintTopFrags(int client = 0)
 
     SortCustom2D(data, count, SortByDamageDesc);
 
-    char msg[512];
+    char msg[256];
     FormatEx(msg, sizeof(msg), "Frags: ");
 
     int printed = 0;
@@ -315,7 +304,7 @@ void PrintTopTankDamage(bool killed)
     if (count == 0)
         return;
 
-    char msg[512];
+    char msg[256];
     FormatEx(msg, sizeof(msg), "{green}Tank(s){default} %s by: ",
         killed ? "was killed" : "was damaged");
 
@@ -347,7 +336,7 @@ void PrintTopWitchDamage()
     if (count == 0)
         return;
 
-    char msg[512];
+    char msg[256];
     FormatEx(msg, sizeof(msg), "{green}Witch{default} was killed by: ");
 
     bool first = true;
@@ -484,7 +473,6 @@ void ResetKills()
 
 void ResetTankDamage()
 {
-    g_bTankFrustrated = false;
     for (int i = 0; i <= MaxClients; i++)
         g_iTankDamage[i] = 0;
 }
