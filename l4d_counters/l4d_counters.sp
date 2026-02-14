@@ -111,9 +111,6 @@ void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
     if (!g_bAllowPrints)
         return;
 
-    if (AreAnySurvivorsAliveAndNotIncap())
-        return;
-
     if (g_cvShowTankHP.BoolValue)
         PrintRemainingTankHP();
 
@@ -157,12 +154,18 @@ void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
     if (GetClientTeam(victim) != TEAM_SURVIVORS)
         return;
 
+    if (AreAnySurvivorsAliveAndNotIncap())
+        return;
+
     // Last survivor died → show stats
     Event_RoundEnd(event, name, dontBroadcast);
 }
 
 void Event_PlayerIncap(Event event, const char[] name, bool dontBroadcast)
 {
+    if (AreAnySurvivorsAliveAndNotIncap())
+        return;
+
     Event_RoundEnd(event, name, dontBroadcast);
 }
 
