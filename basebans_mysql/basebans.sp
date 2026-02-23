@@ -255,6 +255,15 @@ Action Command_AddBan(int client, int args)
 		return Plugin_Handled;
 	}
 
+	for (int i = 0; i < strlen(s_time); i++)
+	{
+		if (!IsCharNumeric(s_time[i]))
+		{
+			ReplyToCommand(client, "[SM] Usage: sm_addban <minutes|0> <steamid> [reason]");
+			return Plugin_Handled;
+		}
+	}
+
 	int time = StringToInt(s_time);
 
 	LogAction(client, 
@@ -306,7 +315,7 @@ Action Command_Unban(int client, int args)
 
 void AddBan(int client, const char[] authid, int time, const char[] reason)
 {
-	char AdminName[128];
+	char AdminName[MAX_NAME_LENGTH];
 	int immunity = GetAdmin(client, AdminName, sizeof(AdminName));
 
 	if (time > 0)
@@ -318,11 +327,38 @@ void AddBan(int client, const char[] authid, int time, const char[] reason)
 		time = 0;
 	}
 
+	int target;
+	char steamid[32];
+
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (!IsClientInGame(i) || IsFakeClient(i)) continue;
+		GetClientAuthId(i, AuthId_Steam2, steamid, sizeof(steamid));
+		if (StrEqual(authid, steamid)) {
+			target = i;
+			break;
+		}
+	}
+
 	char dbReason[255];
 	db.Escape(reason, dbReason, sizeof(dbReason));
 
 	char query[512];
-	FormatEx(query, sizeof(query), "INSERT IGNORE INTO `%s` (`steamid`,`date`,`time`,`reason`,`admin`,`immunity`) VALUES ('%s','%d','%d','%s','%s','%i')", TABLE_NAME, authid, GetTime(), time, dbReason, AdminName, immunity);
+	if (target)
+	{
+		char name[MAX_NAME_LENGTH], ip[24];
+		GetClientName(target, name, sizeof(name));
+		GetClientIP(target, ip, sizeof(ip));
+
+		char dbName[MAX_NAME_LENGTH];
+		db.Escape(name, dbName, sizeof(dbName));
+
+		FormatEx(query, sizeof(query), "INSERT IGNORE INTO `%s` (`name`,`ip`,`steamid`,`date`,`time`,`reason`,`admin`,`immunity`) VALUES ('%s','%s','%s','%d','%d','%s','%s','%i')", TABLE_NAME, dbName, ip, authid, GetTime(), time, dbReason, AdminName, immunity);
+	}
+	else
+	{
+		FormatEx(query, sizeof(query), "INSERT IGNORE INTO `%s` (`steamid`,`date`,`time`,`reason`,`admin`,`immunity`) VALUES ('%s','%d','%d','%s','%s','%i')", TABLE_NAME, authid, GetTime(), time, dbReason, AdminName, immunity);
+	}
 	db.Query(SQLErrorCheckCallback, query);
 
 #if defined BANS_CACHE
@@ -565,10 +601,10 @@ void PrepareBan(int client, int target, int time, const char[] reason)
 		}
 	}
 
-	char dbName[128];
+	char dbName[MAX_NAME_LENGTH];
 	db.Escape(name, dbName, sizeof(dbName));
 
-	char AdminName[128];
+	char AdminName[MAX_NAME_LENGTH];
 	int immunity = GetAdmin(client, AdminName, sizeof(AdminName));
 
 	char dbReason[255];
@@ -867,6 +903,15 @@ Action Command_Ban(int client, int args)
 	{
 		len = 0;
 		Arguments[0] = '\0';
+	}
+
+	for (int i = 0; i < strlen(s_time); i++)
+	{
+		if (!IsCharNumeric(s_time[i]))
+		{
+			ReplyToCommand(client, "[SM] Usage: sm_ban <#userid|name> <minutes|0> [reason]");
+			return Plugin_Handled;
+		}
 	}
 
 	playerinfo[client].banTargetUserId = GetClientUserId(target);
