@@ -32,14 +32,14 @@ static float g_fPreventDamage[33][33];
 static float g_fLastMeleeSwing[33];
 static float g_fNextAttack[33];
 
-Address Collision_Address = Address_Null;
+Address Collision_Address = 0;
 
-Address OnMoveToFailure_1 = Address_Null;
-Address OnMoveToFailure_2 = Address_Null;
-Address GetVictim = Address_Null;
-Address OnStart = Address_Null;
-Address OnAnimationEvent = Address_Null;
-Address Update = Address_Null;
+Address OnMoveToFailure_1 = 0;
+Address OnMoveToFailure_2 = 0;
+Address GetVictim = 0;
+Address OnStart = 0;
+Address OnAnimationEvent = 0;
+Address Update = 0;
 
 int MoveFailureBytesStore_1[2];
 int MoveFailureBytesStore_2[2];
@@ -100,10 +100,10 @@ public void OnPluginStart()
 	if( offset == -1 ) 
 		SetFailState("Invalid offset for 'CCharge::HandleCustomCollision'.");
 	
-	int byte = LoadFromAddress(patch + view_as<Address>(offset), NumberType_Int8);
+	int byte = LoadFromAddress(patch + offset, NumberType_Int8);
 	if(byte == 0x01)
 	{
-		Collision_Address = patch + view_as<Address>(offset);
+		Collision_Address = patch + offset;
 		StoreToAddress(Collision_Address, 0x00, NumberType_Int8);
 		PrintToServer("ChargerCollision patch applied 'CCharge::HandleCustomCollision'");
 		
@@ -129,17 +129,17 @@ public void OnPluginStart()
 	if( offset == -1 ) 
 		SetFailState("Invalid offset for 'WitchAttack::OnMoveToFailure_1'.");
 	
-	byte = LoadFromAddress(patch + view_as<Address>(offset), NumberType_Int8);
+	byte = LoadFromAddress(patch + offset, NumberType_Int8);
 	if(byte == 0x74 || byte == 0x75)
 	{
-		OnMoveToFailure_1 = patch + view_as<Address>(offset);
+		OnMoveToFailure_1 = patch + offset;
 		MoveFailureBytesStore_1[0] = LoadFromAddress(OnMoveToFailure_1, NumberType_Int8);
-		MoveFailureBytesStore_1[1] = LoadFromAddress(OnMoveToFailure_1 + view_as<Address>(1), NumberType_Int8);
+		MoveFailureBytesStore_1[1] = LoadFromAddress(OnMoveToFailure_1 + 1, NumberType_Int8);
 		
 		if(byte == 0x74)
 		{
 			StoreToAddress(OnMoveToFailure_1, 0x90, NumberType_Int8);
-			StoreToAddress(OnMoveToFailure_1 + view_as<Address>(1), 0x90, NumberType_Int8);
+			StoreToAddress(OnMoveToFailure_1 + 1, 0x90, NumberType_Int8);
 		}
 		else
 		{
@@ -156,15 +156,15 @@ public void OnPluginStart()
 	if( offset == -1 ) 
 		SetFailState("Invalid offset for 'WitchAttack::OnMoveToFailure_2'.");
 	
-	byte = LoadFromAddress(patch + view_as<Address>(offset), NumberType_Int8);
+	byte = LoadFromAddress(patch + offset, NumberType_Int8);
 	if(byte == 0x74 || byte == 0x75)
 	{
-		OnMoveToFailure_2 = patch + view_as<Address>(offset);
+		OnMoveToFailure_2 = patch + offset;
 		MoveFailureBytesStore_2[0] = LoadFromAddress(OnMoveToFailure_2, NumberType_Int8);
-		MoveFailureBytesStore_2[1] = LoadFromAddress(OnMoveToFailure_2 + view_as<Address>(1), NumberType_Int8);
+		MoveFailureBytesStore_2[1] = LoadFromAddress(OnMoveToFailure_2 + 1, NumberType_Int8);
 		
 		StoreToAddress(OnMoveToFailure_2, 0x90, NumberType_Int8);
-		StoreToAddress(OnMoveToFailure_2 + view_as<Address>(1), 0x90, NumberType_Int8);
+		StoreToAddress(OnMoveToFailure_2 + 1, 0x90, NumberType_Int8);
 		PrintToServer("WitchPatch Preventloss patch applied 'WitchAttack::OnMoveToFailure_2'");
 	}
 	else
@@ -180,13 +180,13 @@ public void OnPluginStart()
 	if( offset == -1 ) 
 		SetFailState("Invalid offset for 'WitchAttack::GetVictim'.");
 	
-	byte = LoadFromAddress(patch + view_as<Address>(offset), NumberType_Int8);
+	byte = LoadFromAddress(patch + offset, NumberType_Int8);
 	if(byte == 0x74)
 	{
-		GetVictim = patch + view_as<Address>(offset);
+		GetVictim = patch + offset;
 		
 		GetVictimBytesStore[0] = LoadFromAddress(GetVictim, NumberType_Int8);
-		GetVictimBytesStore[1] = LoadFromAddress(GetVictim + view_as<Address>(1), NumberType_Int8);
+		GetVictimBytesStore[1] = LoadFromAddress(GetVictim + 1, NumberType_Int8);
 		
 		StoreToAddress(GetVictim, 0xEB, NumberType_Int8);
 		PrintToServer("WitchPatch Targeting patch applied 'WitchAttack::GetVictim'");
@@ -195,13 +195,13 @@ public void OnPluginStart()
 	}
 	if(byte == 0x75)
 	{
-		GetVictim = patch + view_as<Address>(offset);
+		GetVictim = patch + offset;
 		
 		GetVictimBytesStore[0] = LoadFromAddress(GetVictim, NumberType_Int8);
-		GetVictimBytesStore[1] = LoadFromAddress(GetVictim + view_as<Address>(1), NumberType_Int8);
+		GetVictimBytesStore[1] = LoadFromAddress(GetVictim + 1, NumberType_Int8);
 		
 		StoreToAddress(GetVictim, 0x90, NumberType_Int8);
-		StoreToAddress(GetVictim + view_as<Address>(1), 0x90, NumberType_Int8);
+		StoreToAddress(GetVictim + 1, 0x90, NumberType_Int8);
 		
 		PrintToServer("WitchPatch Targeting patch applied 'WitchAttack::GetVictim'");
 	}
@@ -218,18 +218,18 @@ public void OnPluginStart()
 	if( offset == -1 ) 
 		SetFailState("Invalid offset for 'WitchAttack::OnStart'.");
 	
-	byte = LoadFromAddress(patch + view_as<Address>(offset), NumberType_Int8);
+	byte = LoadFromAddress(patch + offset, NumberType_Int8);
 	if(byte == 0x75)
 	{
-		OnStart = patch + view_as<Address>(offset);
+		OnStart = patch + offset;
 		
 		for(int i = 0; i <= 5; i++)
 		{
-			OnStartBytesStore[i] = LoadFromAddress(OnStart + view_as<Address>(i), NumberType_Int8);
+			OnStartBytesStore[i] = LoadFromAddress(OnStart + i, NumberType_Int8);
 		}
 		
 		StoreToAddress(OnStart, 0x90, NumberType_Int8);
-		StoreToAddress(OnStart + view_as<Address>(1), 0x90, NumberType_Int8);
+		StoreToAddress(OnStart + 1, 0x90, NumberType_Int8);
 		
 		PrintToServer("WitchPatch Targeting patch applied 'WitchAttack::OnStart'");
 	}
@@ -246,16 +246,16 @@ public void OnPluginStart()
 	if( offset == -1 ) 
 		SetFailState("Invalid offset for 'WitchAttack::OnAnimationEvent'.");
 	
-	byte = LoadFromAddress(patch + view_as<Address>(offset), NumberType_Int8);
+	byte = LoadFromAddress(patch + offset, NumberType_Int8);
 	if(byte == 0x75)
 	{
-		OnAnimationEvent = patch + view_as<Address>(offset);
+		OnAnimationEvent = patch + offset;
 		
 		OnAnimationEventBytesStore[0] = LoadFromAddress(OnAnimationEvent, NumberType_Int8);
-		OnAnimationEventBytesStore[1] = LoadFromAddress(OnAnimationEvent + view_as<Address>(1), NumberType_Int8);
+		OnAnimationEventBytesStore[1] = LoadFromAddress(OnAnimationEvent + 1, NumberType_Int8);
 		
 		StoreToAddress(OnAnimationEvent, 0x90, NumberType_Int8);
-		StoreToAddress(OnAnimationEvent + view_as<Address>(1), 0x90, NumberType_Int8);
+		StoreToAddress(OnAnimationEvent + 1, 0x90, NumberType_Int8);
 		
 		PrintToServer("WitchPatch Targeting patch applied 'WitchAttack::OnAnimationEvent'");
 	}
@@ -272,18 +272,18 @@ public void OnPluginStart()
 	if( offset == -1 ) 
 		SetFailState("Invalid offset for 'WitchAttack::Update'.");
 	
-	byte = LoadFromAddress(patch + view_as<Address>(offset), NumberType_Int8);
+	byte = LoadFromAddress(patch + offset, NumberType_Int8);
 	if(byte == 0x75)
 	{
-		Update = patch + view_as<Address>(offset);
+		Update = patch + offset;
 		
 		for(int i = 0; i <= 5; i++)
 		{
-			UpdateBytesStore[i] = LoadFromAddress(Update + view_as<Address>(i), NumberType_Int8);
+			UpdateBytesStore[i] = LoadFromAddress(Update + i, NumberType_Int8);
 		}
 		
 		StoreToAddress(Update, 0x90, NumberType_Int8);
-		StoreToAddress(Update + view_as<Address>(1), 0x90, NumberType_Int8);
+		StoreToAddress(Update + 1, 0x90, NumberType_Int8);
 		
 		PrintToServer("WitchPatch Targeting patch applied 'WitchAttack::Update'");
 	}
@@ -418,7 +418,7 @@ Action OnWitchDamage(int victim, int &attacker, int &inflictor, float &damage, i
 Action FindDeathSpit(Handle hTimer)
 {
 	int iEntity = -1, iMaxFlames = 0, iCurrentFlames = 0;
-	Address pEntity;
+	Address pEntity = Address_Null;
 	
 	while ((iEntity = FindEntityByClassname(iEntity, "insect_swarm")) != -1) {
 		pEntity = GetEntityAddress(iEntity);
@@ -426,12 +426,12 @@ Action FindDeathSpit(Handle hTimer)
 		if (pEntity == Address_Null)
 			continue;
 		
-		iMaxFlames = LoadFromAddress(pEntity + view_as<Address>(g_iMaxFlames), NumberType_Int32);
+		iMaxFlames = LoadFromAddress(pEntity + g_iMaxFlames, NumberType_Int32);
 		iCurrentFlames = GetEntProp(iEntity, Prop_Send, "m_fireCount");
 		
 		if (iMaxFlames == 2 && iCurrentFlames == 2) {
 			SetEntProp(iEntity, Prop_Send, "m_fireCount", 1);
-			StoreToAddress(pEntity + view_as<Address>(g_iMaxFlames), 1, NumberType_Int32);
+			StoreToAddress(pEntity + g_iMaxFlames, 1, NumberType_Int32);
 		}
 	}
 
@@ -513,7 +513,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 
 public void OnPluginEnd()
 {
-	if(Collision_Address != Address_Null)
+	if(Collision_Address != 0)
 	{
 		StoreToAddress(Collision_Address, 0x01, NumberType_Int8);
 		PrintToServer("ChargerCollision patch restored 'CCharge::HandleCustomCollision'");
@@ -529,47 +529,47 @@ public void OnPluginEnd()
 		PrintToServer("ChargerCollision restored 'z_charge_max_force/z_charge_min_force' convars'");
 	}
 	
-	if(OnMoveToFailure_1 != Address_Null)
+	if(OnMoveToFailure_1 != 0)
 	{
 		StoreToAddress(OnMoveToFailure_1, MoveFailureBytesStore_1[0], NumberType_Int8);
-		StoreToAddress(OnMoveToFailure_1 + view_as<Address>(1), MoveFailureBytesStore_1[1], NumberType_Int8);
+		StoreToAddress(OnMoveToFailure_1 + 1, MoveFailureBytesStore_1[1], NumberType_Int8);
 		PrintToServer("WitchPatch restored 'WitchAttack::OnMoveToFailure_1'");
 	}
-	if(OnMoveToFailure_2 != Address_Null)
+	if(OnMoveToFailure_2 != 0)
 	{
 		StoreToAddress(OnMoveToFailure_2, MoveFailureBytesStore_2[0], NumberType_Int8);
-		StoreToAddress(OnMoveToFailure_2 + view_as<Address>(1), MoveFailureBytesStore_2[1], NumberType_Int8);
+		StoreToAddress(OnMoveToFailure_2 + 1, MoveFailureBytesStore_2[1], NumberType_Int8);
 		PrintToServer("WitchPatch restored 'WitchAttack::OnMoveToFailure_2'");
 	}
 	
-	if(GetVictim != Address_Null)
+	if(GetVictim != 0)
 	{
 		StoreToAddress(GetVictim, GetVictimBytesStore[0], NumberType_Int8);
-		StoreToAddress(GetVictim + view_as<Address>(1), GetVictimBytesStore[1], NumberType_Int8);
+		StoreToAddress(GetVictim + 1, GetVictimBytesStore[1], NumberType_Int8);
 		PrintToServer("WitchPatch restored 'WitchAttack::GetVictim'");
 	}
 	
-	if(OnStart != Address_Null)
+	if(OnStart != 0)
 	{
 		for(int i = 0; i <= 5; i++)
 		{
-			StoreToAddress(OnStart + view_as<Address>(i), OnStartBytesStore[i], NumberType_Int8);
+			StoreToAddress(OnStart + i, OnStartBytesStore[i], NumberType_Int8);
 		}
 		PrintToServer("WitchPatch restored 'WitchAttack::OnStart'");
 	}
 	
-	if(OnAnimationEvent != Address_Null)
+	if(OnAnimationEvent != 0)
 	{
 		StoreToAddress(OnAnimationEvent, OnAnimationEventBytesStore[0], NumberType_Int8);
-		StoreToAddress(OnAnimationEvent + view_as<Address>(1), OnAnimationEventBytesStore[1], NumberType_Int8);
+		StoreToAddress(OnAnimationEvent + 1, OnAnimationEventBytesStore[1], NumberType_Int8);
 		PrintToServer("WitchPatch restored 'WitchAttack::OnAnimationEvent'");
 	}
 	
-	if(Update != Address_Null)
+	if(Update != 0)
 	{
 		for(int i = 0; i <= 5; i++)
 		{
-			StoreToAddress(Update + view_as<Address>(i), UpdateBytesStore[i], NumberType_Int8);
+			StoreToAddress(Update + i, UpdateBytesStore[i], NumberType_Int8);
 		}
 		PrintToServer("WitchPatch restored 'WitchAttack::Update'");
 	}

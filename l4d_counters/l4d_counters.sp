@@ -422,7 +422,7 @@ bool AreAnySurvivorsAliveAndNotIncap()
 {
     for (int i = 1; i <= MaxClients; i++)
     {
-        if (IsSurvivor(i) && IsPlayerAlive(i) && !IsIncapacitated(i))
+        if (IsClientInGame(i) && GetClientTeam(i) == TEAM_SURVIVORS && IsPlayerAlive(i) && !IsIncapacitated(i))
             return true;
     }
     return false;

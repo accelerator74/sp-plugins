@@ -32,8 +32,8 @@ public void OnPluginStart()
 			SetFailState("Could not load the HitAnnouncement address");
 		}
 
-		Address pRelativeOffset = LoadFromAddress(addr + view_as<Address>(1), NumberType_Int32);
-		Address pFunc = addr + view_as<Address>(5) + pRelativeOffset;
+		int pRelativeOffset = LoadFromAddress(addr + 1, NumberType_Int32);
+		Address pFunc = addr + 5 + pRelativeOffset;
 
 		detour = new DynamicDetour(pFunc, CallConv_CDECL, ReturnType_Bool, ThisPointer_Ignore);
 		detour.AddParam(HookParamType_ObjectPtr);

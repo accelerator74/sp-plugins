@@ -26,15 +26,15 @@ public void OnPluginStart()
 	int offset = GameConfGetOffset(hGameConf, "LagCompensationOffset");
 	Address patch = GameConfGetAddress(hGameConf, "StartLagCompensation");
 	if( !patch ) SetFailState("Error finding the 'StartLagCompensation' signature.");
-	int byte = LoadFromAddress(patch + view_as<Address>(offset), NumberType_Int8);
+	int byte = LoadFromAddress(patch + offset, NumberType_Int8);
 	if( byte == 0x0F )
 	{
-		StoreToAddress(patch + view_as<Address>(offset), 0x74, NumberType_Int8);
-		StoreToAddress(patch + view_as<Address>(offset + 1), 0xA4, NumberType_Int8);
-		StoreToAddress(patch + view_as<Address>(offset + 2), 0x90, NumberType_Int8);
-		StoreToAddress(patch + view_as<Address>(offset + 3), 0x90, NumberType_Int8);
-		StoreToAddress(patch + view_as<Address>(offset + 4), 0x90, NumberType_Int8);
-		StoreToAddress(patch + view_as<Address>(offset + 5), 0x90, NumberType_Int8);
+		StoreToAddress(patch + offset, 0x74, NumberType_Int8);
+		StoreToAddress(patch + offset + 1, 0xA4, NumberType_Int8);
+		StoreToAddress(patch + offset + 2, 0x90, NumberType_Int8);
+		StoreToAddress(patch + offset + 3, 0x90, NumberType_Int8);
+		StoreToAddress(patch + offset + 4, 0x90, NumberType_Int8);
+		StoreToAddress(patch + offset + 5, 0x90, NumberType_Int8);
 	}
 	else
 	{
@@ -45,11 +45,11 @@ public void OnPluginStart()
 	offset = GameConfGetOffset(hGameConf, "Patch_ChaseVictim");
 	patch = GameConfGetAddress(hGameConf, "ChaseVictim::Update");
 	if( !patch ) SetFailState("Error finding the 'ChaseVictim::Update' signature.");
-	byte = LoadFromAddress(patch + view_as<Address>(offset), NumberType_Int8);
+	byte = LoadFromAddress(patch + offset, NumberType_Int8);
 	if( byte == 0xE8 )
 	{
 		for( int i = 0; i < 5; i++ )
-			StoreToAddress(patch + view_as<Address>(offset + i), 0x90, NumberType_Int8);
+			StoreToAddress(patch + offset + i, 0x90, NumberType_Int8);
 	}
 	else if( byte != 0x90 )
 	{
@@ -58,11 +58,11 @@ public void OnPluginStart()
 	offset = GameConfGetOffset(hGameConf, "Patch_InfectedFlee");
 	patch = GameConfGetAddress(hGameConf, "InfectedFlee::Update");
 	if( !patch ) SetFailState("Error finding the 'InfectedFlee::Update' signature.");
-	byte = LoadFromAddress(patch + view_as<Address>(offset), NumberType_Int8);
+	byte = LoadFromAddress(patch + offset, NumberType_Int8);
 	if( byte == 0xE8 )
 	{
 		for( int i = 0; i < 5; i++ )
-			StoreToAddress(patch + view_as<Address>(offset + i), 0x90, NumberType_Int8);
+			StoreToAddress(patch + offset + i, 0x90, NumberType_Int8);
 	}
 	else if( byte != 0x90 )
 	{

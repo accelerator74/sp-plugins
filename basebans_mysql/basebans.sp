@@ -9,7 +9,7 @@
 #define TABLE_NAME	"mb_bans"
 #define BANS_CACHE
 
-Database db;
+Database hDb;
 #if defined BANS_CACHE
 StringMap hBansCache;
 
@@ -76,13 +76,13 @@ public void OnPluginStart()
 
 public void OnMapStart()
 {
-	if (db == null)
+	if (hDb == null)
 		ConnectDB();
 
 #if defined BANS_CACHE
 	char query[128];
 	FormatEx(query, sizeof(query), "SELECT steamid,time,reason FROM `%s` WHERE time = 0 OR time > %d", TABLE_NAME, GetTime());
-	db.Query(GetValidBans, query);
+	hDb.Query(GetValidBans, query);
 #endif
 }
 
@@ -131,15 +131,15 @@ void ConnectDB()
 	if (SQL_CheckConfig("default"))
 	{
 		char Error[256];
-		db = SQL_DefConnect(Error, sizeof(Error), true);
+		hDb = SQL_DefConnect(Error, sizeof(Error), true);
 
-		if (db == null)
+		if (hDb == null)
 			LogError("Failed to connect to database: %s", Error);
 		else
 		{
-			if (!db.SetCharset("utf8"))
+			if (!hDb.SetCharset("utf8"))
 			{
-				SQL_GetError(db, Error, sizeof(Error));
+				SQL_GetError(hDb, Error, sizeof(Error));
 				LogError("SQL Error: %s", Error);
 			}
 		}
@@ -308,7 +308,7 @@ Action Command_Unban(int client, int args)
 
 	char query[128];
 	FormatEx(query, sizeof(query), "SELECT steamid,immunity FROM `%s` WHERE steamid = '%s' LIMIT 1", TABLE_NAME, authid);
- 	db.Query(PrepareUnban, query, client);
+ 	hDb.Query(PrepareUnban, query, client);
 
 	return Plugin_Handled;
 }
@@ -341,7 +341,7 @@ void AddBan(int client, const char[] authid, int time, const char[] reason)
 	}
 
 	char dbReason[255];
-	db.Escape(reason, dbReason, sizeof(dbReason));
+	hDb.Escape(reason, dbReason, sizeof(dbReason));
 
 	char query[512];
 	if (target)
@@ -351,7 +351,7 @@ void AddBan(int client, const char[] authid, int time, const char[] reason)
 		GetClientIP(target, ip, sizeof(ip));
 
 		char dbName[MAX_NAME_LENGTH];
-		db.Escape(name, dbName, sizeof(dbName));
+		hDb.Escape(name, dbName, sizeof(dbName));
 
 		FormatEx(query, sizeof(query), "INSERT IGNORE INTO `%s` (`name`,`ip`,`steamid`,`date`,`time`,`reason`,`admin`,`immunity`) VALUES ('%s','%s','%s','%d','%d','%s','%s','%i')", TABLE_NAME, dbName, ip, authid, GetTime(), time, dbReason, AdminName, immunity);
 	}
@@ -359,7 +359,7 @@ void AddBan(int client, const char[] authid, int time, const char[] reason)
 	{
 		FormatEx(query, sizeof(query), "INSERT IGNORE INTO `%s` (`steamid`,`date`,`time`,`reason`,`admin`,`immunity`) VALUES ('%s','%d','%d','%s','%s','%i')", TABLE_NAME, authid, GetTime(), time, dbReason, AdminName, immunity);
 	}
-	db.Query(SQLErrorCheckCallback, query);
+	hDb.Query(SQLErrorCheckCallback, query);
 
 #if defined BANS_CACHE
 	BanData structData;
@@ -461,7 +461,7 @@ public void OnClientAuthorized(int client, const char[] auth)
 
 	char query[192];
 	FormatEx(query, sizeof(query), "SELECT steamid,time,reason,date FROM `%s` WHERE steamid = '%s' OR ip = '%s' LIMIT 1", TABLE_NAME, auth, ip);
- 	db.Query(CheckClient, query, GetClientUserId(client));
+ 	hDb.Query(CheckClient, query, GetClientUserId(client));
 }
 
 void CheckClient(Database owner, DBResultSet hQuery, const char[] error, int client)
@@ -506,7 +506,7 @@ void CheckClient(Database owner, DBResultSet hQuery, const char[] error, int cli
 		{
 			char query[128];
 			FormatEx(query, sizeof(query), "DELETE FROM `%s` WHERE steamid = '%s'", TABLE_NAME, authid);
-			db.Query(SQLErrorCheckCallback, query);
+			hDb.Query(SQLErrorCheckCallback, query);
 		}
 	}
 }
@@ -538,7 +538,7 @@ void PrepareUnban(Database owner, DBResultSet hQuery, const char[] error, int cl
 		char query[128], authid[32];
 		hQuery.FetchString(0, authid, sizeof(authid));
 		FormatEx(query, sizeof(query), "DELETE FROM `%s` WHERE steamid = '%s'", TABLE_NAME, authid);
-		db.Query(SQLErrorCheckCallback, query);
+		hDb.Query(SQLErrorCheckCallback, query);
 
 #if defined BANS_CACHE
 		hBansCache.Remove(authid);
@@ -602,17 +602,17 @@ void PrepareBan(int client, int target, int time, const char[] reason)
 	}
 
 	char dbName[MAX_NAME_LENGTH];
-	db.Escape(name, dbName, sizeof(dbName));
+	hDb.Escape(name, dbName, sizeof(dbName));
 
 	char AdminName[MAX_NAME_LENGTH];
 	int immunity = GetAdmin(client, AdminName, sizeof(AdminName));
 
 	char dbReason[255];
-	db.Escape(reason, dbReason, sizeof(dbReason));
+	hDb.Escape(reason, dbReason, sizeof(dbReason));
 
 	char query[512];
 	FormatEx(query, sizeof(query), "INSERT IGNORE INTO `%s` (`name`,`ip`,`steamid`,`date`,`time`,`reason`,`admin`,`immunity`) VALUES ('%s','%s','%s','%d','%d','%s','%s','%i')", TABLE_NAME, dbName, ip, authid, GetTime(), time, dbReason, AdminName, immunity);
-	db.Query(SQLErrorCheckCallback, query);
+	hDb.Query(SQLErrorCheckCallback, query);
 
 #if defined BANS_CACHE
 	BanData structData;
