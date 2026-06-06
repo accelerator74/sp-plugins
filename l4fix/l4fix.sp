@@ -1,4 +1,4 @@
-/*  
+/* 
 *    Fixes for gamebreaking bugs and stupid gameplay aspects
 *    Copyright (C) 2019  LuxLuma		acceliacat@gmail.com
 *
@@ -21,16 +21,16 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
+#include <dhooks>
 
 #pragma newdecls required
 
 #define GAMEDATA "l4fix"
-#define PLUGIN_VERSION	"1.0.8"
+#define PLUGIN_VERSION	"1.1.0"
 
-static int g_iWitchHarasser[2049];
-static float g_fPreventDamage[33][33];
-static float g_fLastMeleeSwing[33];
-static float g_fNextAttack[33];
+int g_iWitchHarasser[2049];
+float g_fLastMeleeSwing[33];
+float g_fNextAttack[33];
 
 Address Collision_Address = 0;
 
@@ -53,9 +53,29 @@ int g_iActiveWeapon = -1;
 int g_iWitchSequence = -1;
 int g_iMaxFlames = -1;
 
+#define IMPACT_SND_INTERVAL 0.1
+
+enum struct ChargerCharge
+{
+	float m_NextImpactSND;
+	bool m_MarkHit[33];
+	
+	void Reset()
+	{
+		this.m_NextImpactSND = 0.0;
+		for (int i = 1; i <= MaxClients; i++)
+		{
+			this.m_MarkHit[i] = false;
+		}
+	}
+}
+
+ChargerCharge g_ChargerCharge[33];
+Handle g_hSetAbsVelocity;
+
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	if(GetEngineVersion() != Engine_Left4Dead2)
+	if (GetEngineVersion() != Engine_Left4Dead2)
 	{
 		strcopy(error, err_max, "Plugin only supports Left 4 Dead 2");
 		return APLRes_SilentFailure;
@@ -83,38 +103,59 @@ public void OnPluginStart()
 	HookEvent("witch_spawn", eWitchSpawn);
 	HookEvent("witch_harasser_set", eWitchHarasser);
 	HookEvent("spitter_killed", eSpitterKilled, EventHookMode_PostNoCopy);
+	HookEvent("round_start", eRoundStart, EventHookMode_PostNoCopy);
+	HookEvent("charger_charge_start", eClearMarkedSurvivors, EventHookMode_Pre);
+	HookEvent("charger_charge_end", eClearMarkedSurvivors, EventHookMode_Pre);
+	AddNormalSoundHook(ImpactSNDHook);
 	
 	Handle hGamedata = LoadGameConfigFile(GAMEDATA);
-	if(hGamedata == null) 
+	if (hGamedata == null)
 		SetFailState("Failed to load \"%s.txt\" gamedata.", GAMEDATA);
 	
 	g_iMaxFlames = GameConfGetOffset(hGamedata, "CInferno::m_maxFlames");
-	if( g_iMaxFlames == -1 ) 
+	if (g_iMaxFlames == -1)
 		SetFailState("Invalid offset for 'CInferno::m_maxFlames'.");
 	
 	Address patch = GameConfGetAddress(hGamedata, "CCharge::HandleCustomCollision");
-	if(!patch) 
+	if (!patch)
 		SetFailState("Error finding the 'CCharge::HandleCustomCollision' signature.");
 	
 	int offset = GameConfGetOffset(hGamedata, "CCharge::HandleCustomCollision");
-	if( offset == -1 ) 
+	if (offset == -1)
 		SetFailState("Invalid offset for 'CCharge::HandleCustomCollision'.");
 	
 	int byte = LoadFromAddress(patch + offset, NumberType_Int8);
-	if(byte == 0x01)
+	if (byte == 0x01)
 	{
+		Handle hDetour = DHookCreateFromConf(hGamedata, "ThrowImpactedSurvivor");
+		if (!hDetour)
+		{
+			SetFailState("Failed to find 'ThrowImpactedSurvivor' signature");
+		}
+		
+		StartPrepSDKCall(SDKCall_Entity);
+		if (!PrepSDKCall_SetFromConf(hGamedata, SDKConf_Signature, "CBaseEntity::SetAbsVelocity"))
+		{
+			SetFailState("Error finding the 'CBaseEntity::SetAbsVelocity' signature.");
+		}
+		
+		PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_Pointer);
+		g_hSetAbsVelocity = EndPrepSDKCall();
+		if (g_hSetAbsVelocity == null)
+		{
+			SetFailState("Unable to prep SDKCall 'CBaseEntity::SetAbsVelocity'");
+		}
+		
+		if (!DHookEnableDetour(hDetour, false, ThrowImpactedSurvivor))
+		{
+			SetFailState("Failed to detour 'ThrowImpactedSurvivor'");
+		}
+		
 		Collision_Address = patch + offset;
 		StoreToAddress(Collision_Address, 0x00, NumberType_Int8);
 		PrintToServer("ChargerCollision patch applied 'CCharge::HandleCustomCollision'");
 		
-		Handle hConvar = FindConVar("z_charge_max_force");
-		SetConVarFloat(hConvar, GetConVarFloat(hConvar) * 0.25);
-		HookConVarChange(hConvar, ScaleDownCvar);
-		
-		hConvar = FindConVar("z_charge_min_force");
-		SetConVarFloat(hConvar, GetConVarFloat(hConvar) * 0.25);
-		HookConVarChange(hConvar, ScaleDownCvar);
-		HookEvent("charger_impact", eChargerImpact, EventHookMode_Pre);
+		delete hDetour;
 	}
 	else
 	{
@@ -122,21 +163,21 @@ public void OnPluginStart()
 	}
 	
 	patch = GameConfGetAddress(hGamedata, "WitchAttack::OnMoveToFailure");
-	if(!patch) 
+	if (!patch)
 		SetFailState("Error finding the 'WitchAttack::OnMoveToFailure' signature.");
 	
 	offset = GameConfGetOffset(hGamedata, "WitchAttack::OnMoveToFailure_1");
-	if( offset == -1 ) 
+	if (offset == -1)
 		SetFailState("Invalid offset for 'WitchAttack::OnMoveToFailure_1'.");
 	
 	byte = LoadFromAddress(patch + offset, NumberType_Int8);
-	if(byte == 0x74 || byte == 0x75)
+	if (byte == 0x74 || byte == 0x75)
 	{
 		OnMoveToFailure_1 = patch + offset;
 		MoveFailureBytesStore_1[0] = LoadFromAddress(OnMoveToFailure_1, NumberType_Int8);
 		MoveFailureBytesStore_1[1] = LoadFromAddress(OnMoveToFailure_1 + 1, NumberType_Int8);
 		
-		if(byte == 0x74)
+		if (byte == 0x74)
 		{
 			StoreToAddress(OnMoveToFailure_1, 0x90, NumberType_Int8);
 			StoreToAddress(OnMoveToFailure_1 + 1, 0x90, NumberType_Int8);
@@ -153,11 +194,11 @@ public void OnPluginStart()
 	}
 	
 	offset = GameConfGetOffset(hGamedata, "WitchAttack::OnMoveToFailure_2");
-	if( offset == -1 ) 
+	if (offset == -1)
 		SetFailState("Invalid offset for 'WitchAttack::OnMoveToFailure_2'.");
 	
 	byte = LoadFromAddress(patch + offset, NumberType_Int8);
-	if(byte == 0x74 || byte == 0x75)
+	if (byte == 0x74 || byte == 0x75)
 	{
 		OnMoveToFailure_2 = patch + offset;
 		MoveFailureBytesStore_2[0] = LoadFromAddress(OnMoveToFailure_2, NumberType_Int8);
@@ -173,15 +214,15 @@ public void OnPluginStart()
 	}
 	
 	patch = GameConfGetAddress(hGamedata, "WitchAttack::GetVictim");
-	if(!patch) 
+	if (!patch)
 		SetFailState("Error finding the 'WitchAttack::GetVictim' signature.");
 	
 	offset = GameConfGetOffset(hGamedata, "WitchAttack::GetVictim");
-	if( offset == -1 ) 
+	if (offset == -1)
 		SetFailState("Invalid offset for 'WitchAttack::GetVictim'.");
 	
 	byte = LoadFromAddress(patch + offset, NumberType_Int8);
-	if(byte == 0x74)
+	if (byte == 0x74)
 	{
 		GetVictim = patch + offset;
 		
@@ -193,7 +234,7 @@ public void OnPluginStart()
 		
 		return;
 	}
-	if(byte == 0x75)
+	if (byte == 0x75)
 	{
 		GetVictim = patch + offset;
 		
@@ -211,19 +252,19 @@ public void OnPluginStart()
 	}
 	
 	patch = GameConfGetAddress(hGamedata, "WitchAttack::OnStart");
-	if(!patch) 
+	if (!patch)
 		SetFailState("Error finding the 'WitchAttack::OnStart' signature.");
 	
 	offset = GameConfGetOffset(hGamedata, "WitchAttack::OnStart");
-	if( offset == -1 ) 
+	if (offset == -1)
 		SetFailState("Invalid offset for 'WitchAttack::OnStart'.");
 	
 	byte = LoadFromAddress(patch + offset, NumberType_Int8);
-	if(byte == 0x75)
+	if (byte == 0x75)
 	{
 		OnStart = patch + offset;
 		
-		for(int i = 0; i <= 5; i++)
+		for (int i = 0; i <= 5; i++)
 		{
 			OnStartBytesStore[i] = LoadFromAddress(OnStart + i, NumberType_Int8);
 		}
@@ -239,15 +280,15 @@ public void OnPluginStart()
 	}
 	
 	patch = GameConfGetAddress(hGamedata, "WitchAttack::OnAnimationEvent");
-	if(!patch) 
+	if (!patch)
 		SetFailState("Error finding the 'WitchAttack::OnAnimationEvent' signature.");
 	
 	offset = GameConfGetOffset(hGamedata, "WitchAttack::OnAnimationEvent");
-	if( offset == -1 ) 
+	if (offset == -1)
 		SetFailState("Invalid offset for 'WitchAttack::OnAnimationEvent'.");
 	
 	byte = LoadFromAddress(patch + offset, NumberType_Int8);
-	if(byte == 0x75)
+	if (byte == 0x75)
 	{
 		OnAnimationEvent = patch + offset;
 		
@@ -265,19 +306,19 @@ public void OnPluginStart()
 	}
 	
 	patch = GameConfGetAddress(hGamedata, "WitchAttack::Update");
-	if(!patch) 
+	if (!patch)
 		SetFailState("Error finding the 'WitchAttack::Update' signature.");
 	
 	offset = GameConfGetOffset(hGamedata, "WitchAttack::Update");
-	if( offset == -1 ) 
+	if (offset == -1)
 		SetFailState("Invalid offset for 'WitchAttack::Update'.");
 	
 	byte = LoadFromAddress(patch + offset, NumberType_Int8);
-	if(byte == 0x75)
+	if (byte == 0x75)
 	{
 		Update = patch + offset;
 		
-		for(int i = 0; i <= 5; i++)
+		for (int i = 0; i <= 5; i++)
 		{
 			UpdateBytesStore[i] = LoadFromAddress(Update + i, NumberType_Int8);
 		}
@@ -299,30 +340,6 @@ public void OnPluginStart()
 		if (IsClientInGame(i))
 			OnClientPutInServer(i);
 	}
-}
-
-void ScaleDownCvar(ConVar hConvar, const char[] sOldValue, const char[] sNewValue)
-{
-	static bool bIgnore = false;
-	if(bIgnore)
-		return;
-	
-	bIgnore = true;
-	SetConVarFloat(hConvar, GetConVarFloat(hConvar) * 0.25);
-	bIgnore = false;
-}
-
-void eChargerImpact(Event hEvent, const char[] sEventName, bool bDontBroadcast)
-{
-	int iVictim = GetClientOfUserId(hEvent.GetInt("victim"));
-	if(iVictim < 1 || !IsClientInGame(iVictim) || !IsPlayerAlive(iVictim))
-		return;
-
-	int iCharger = GetClientOfUserId(hEvent.GetInt("userid"));
-	if(iCharger < 1 || !IsClientInGame(iCharger) || !IsPlayerAlive(iCharger))
-		return;
-	
-	g_fPreventDamage[iCharger][iVictim] = GetEngineTime() + 0.5;
 }
 
 void eWeaponFire(Event hEvent, const char[] sEventName, bool bDontBroadcast)
@@ -360,6 +377,35 @@ void eSpitterKilled(Event hEvent, const char[] sEventName, bool bDontBroadcast)
 	CreateTimer(1.0, FindDeathSpit, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
+void eRoundStart(Event hEvent, const char[] sEventName, bool bDontBroadcast)
+{
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		g_ChargerCharge[i].Reset();
+	}
+}
+
+void eClearMarkedSurvivors(Event hEvent, const char[] sEventName, bool bDontBroadcast)
+{
+	int iCharger = GetClientOfUserId(hEvent.GetInt("userid"));
+	if (!iCharger)
+		return;
+	
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		g_ChargerCharge[iCharger].m_MarkHit[i] = false;
+	}
+}
+
+void OnSpawnPost(int client)
+{
+	g_ChargerCharge[client].Reset();
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		g_ChargerCharge[i].m_MarkHit[client] = false;
+	}
+}
+
 void OnWeaponSwitched(int client, int weapon)
 {
 	if (!IsFakeClient(client))
@@ -385,7 +431,7 @@ void OnWitchThink(int iWitch)
 		}
 		case 30:
 		{
-			if(GetEntProp(iWitch, Prop_Data, "m_iHealth") > 0)
+			if (GetEntProp(iWitch, Prop_Data, "m_iHealth") > 0)
 			{
 				SetEntPropFloat(iWitch, Prop_Send, "m_flCycle", 1.0);
 			}
@@ -438,50 +484,95 @@ Action FindDeathSpit(Handle hTimer)
 	return Plugin_Stop;
 }
 
-public void OnEntityCreated(int iEntity, const char[] sClassname)
+Action ImpactSNDHook(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &iCharger, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 {
-	if(sClassname[0] != 's' || !StrEqual(sClassname, "survivor_bot"))
-	 	return;
+	if (iCharger < 1 || iCharger > MaxClients || !IsClientInGame(iCharger) ||
+		GetClientTeam(iCharger) != 3 || !IsPlayerAlive(iCharger))
+	{
+		return Plugin_Continue;
+	}
+	
+	int iAbility = GetEntPropEnt(iCharger, Prop_Send, "m_customAbility");
+	if (iAbility == -1 || !HasEntProp(iAbility, Prop_Send, "m_isCharging"))
+	{
+		return Plugin_Continue;
+	}
+	
+	if (!GetEntProp(iAbility, Prop_Send, "m_isCharging", 1))
+		return Plugin_Continue;
+	
+	if (g_ChargerCharge[iCharger].m_NextImpactSND > GetGameTime())
+	{
+		if (StrContains(sample, "player/charger/hit/charger_smash_0", false) != -1)
+			return Plugin_Handled;
+	}
+	
+	return Plugin_Continue;
+}
 
-	SDKHook(iEntity, SDKHook_OnTakeDamage, BlockRecursiveDamage);
+MRESReturn ThrowImpactedSurvivor(Handle hReturn, Handle hParams)
+{
+	int iCharger = DHookGetParam(hParams, 1);
+	int iVictim = DHookGetParam(hParams, 2);
+	bool ShouldDamage = DHookGetParam(hParams, 4);
+	
+	if (!ShouldDamage)
+		return MRES_Ignored;
+	
+	if (iCharger < 1 || iCharger > MaxClients || GetClientTeam(iCharger) != 3 || !IsPlayerAlive(iCharger))
+	{
+		return MRES_Ignored;
+	}
+	
+	int iAbility = GetEntPropEnt(iCharger, Prop_Send, "m_customAbility");
+	if (iAbility == -1 || !HasEntProp(iAbility, Prop_Send, "m_isCharging"))
+	{
+		return MRES_Ignored;
+	}
+	
+	if (!GetEntProp(iAbility, Prop_Send, "m_isCharging", 1))
+		return MRES_Ignored;
+	
+	int iCarryVictim = GetEntPropEnt(iCharger, Prop_Send, "m_carryVictim");
+	if (iCarryVictim == -1)
+	{
+		DHookSetReturn(hReturn, 1);
+		return MRES_Supercede;
+	}
+	
+	if (iCarryVictim == iVictim)
+	{
+		g_ChargerCharge[iCharger].m_NextImpactSND = GetGameTime() + IMPACT_SND_INTERVAL;
+		DHookSetReturn(hReturn, 1);
+		return MRES_Supercede;
+	}
+	
+	//Set velocity to 0 so impulse velocity does not account for current velocity
+	static float vecNoVel[3] = {0.0, 0.0, 0.0};
+	SDKCall(g_hSetAbsVelocity, iVictim, vecNoVel);
+	
+	g_ChargerCharge[iCharger].m_NextImpactSND = GetGameTime() + IMPACT_SND_INTERVAL;
+	if (g_ChargerCharge[iCharger].m_MarkHit[iVictim])
+	{
+		DHookSetParam(hParams, 4, false);
+		DHookSetReturn(hReturn, 1);
+		return MRES_ChangedHandled;
+	}
+	
+	g_ChargerCharge[iCharger].m_MarkHit[iVictim] = true;
+	return MRES_Ignored;
 }
 
 public void OnClientPutInServer(int iClient)
 {
 	g_fLastMeleeSwing[iClient] = 0.0;	
 	
-	if(!IsFakeClient(iClient))
+	SDKHook(iClient, SDKHook_SpawnPost, OnSpawnPost);
+	
+	if (!IsFakeClient(iClient))
 	{
-		SDKHook(iClient, SDKHook_OnTakeDamage, BlockRecursiveDamage);
 		SDKHook(iClient, SDKHook_WeaponSwitchPost, OnWeaponSwitched);
 	}
-}
-
-Action BlockRecursiveDamage(int iVictim, int &iCharger, int &iInflictor, float &fDamage, int &iDamagetype)
-{
-	if(GetClientTeam(iVictim) != 2)
-		return Plugin_Continue;
-	
-	if(iCharger < 1 || iCharger > MaxClients || 
-		GetClientTeam(iCharger) != 3 || !IsPlayerAlive(iCharger) || 
-		GetEntProp(iCharger, Prop_Send, "m_zombieClass") != 6 )
-		return Plugin_Continue;
-	
-	int iAbility = GetEntPropEnt(iCharger, Prop_Send, "m_customAbility");
-	if(iAbility <= MaxClients || !HasEntProp(iAbility, Prop_Send, "m_isCharging"))
-		return Plugin_Continue;
-	
-	if(GetEntProp(iAbility, Prop_Send, "m_isCharging", 1))
-	{
-		if(GetEntPropEnt(iVictim, Prop_Send, "m_carryAttacker") == iCharger &&
-			GetEntPropEnt(iCharger, Prop_Send, "m_carryVictim") == iVictim)
-			return Plugin_Continue;
-			
-		if(g_fPreventDamage[iCharger][iVictim] > GetEngineTime())
-			return Plugin_Handled;
-			
-	}
-	return Plugin_Continue;
 }
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon)
@@ -513,61 +604,51 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 
 public void OnPluginEnd()
 {
-	if(Collision_Address != 0)
+	if (Collision_Address != 0)
 	{
 		StoreToAddress(Collision_Address, 0x01, NumberType_Int8);
 		PrintToServer("ChargerCollision patch restored 'CCharge::HandleCustomCollision'");
-		
-		Handle hConvar = FindConVar("z_charge_max_force");
-		UnhookConVarChange(hConvar, ScaleDownCvar);
-		SetConVarFloat(hConvar, GetConVarFloat(hConvar) / 0.25);
-		
-		hConvar = FindConVar("z_charge_min_force");
-		UnhookConVarChange(hConvar, ScaleDownCvar);
-		SetConVarFloat(hConvar, GetConVarFloat(hConvar) / 0.25);
-		
-		PrintToServer("ChargerCollision restored 'z_charge_max_force/z_charge_min_force' convars'");
 	}
 	
-	if(OnMoveToFailure_1 != 0)
+	if (OnMoveToFailure_1 != 0)
 	{
 		StoreToAddress(OnMoveToFailure_1, MoveFailureBytesStore_1[0], NumberType_Int8);
 		StoreToAddress(OnMoveToFailure_1 + 1, MoveFailureBytesStore_1[1], NumberType_Int8);
 		PrintToServer("WitchPatch restored 'WitchAttack::OnMoveToFailure_1'");
 	}
-	if(OnMoveToFailure_2 != 0)
+	if (OnMoveToFailure_2 != 0)
 	{
 		StoreToAddress(OnMoveToFailure_2, MoveFailureBytesStore_2[0], NumberType_Int8);
 		StoreToAddress(OnMoveToFailure_2 + 1, MoveFailureBytesStore_2[1], NumberType_Int8);
 		PrintToServer("WitchPatch restored 'WitchAttack::OnMoveToFailure_2'");
 	}
 	
-	if(GetVictim != 0)
+	if (GetVictim != 0)
 	{
 		StoreToAddress(GetVictim, GetVictimBytesStore[0], NumberType_Int8);
 		StoreToAddress(GetVictim + 1, GetVictimBytesStore[1], NumberType_Int8);
 		PrintToServer("WitchPatch restored 'WitchAttack::GetVictim'");
 	}
 	
-	if(OnStart != 0)
+	if (OnStart != 0)
 	{
-		for(int i = 0; i <= 5; i++)
+		for (int i = 0; i <= 5; i++)
 		{
 			StoreToAddress(OnStart + i, OnStartBytesStore[i], NumberType_Int8);
 		}
 		PrintToServer("WitchPatch restored 'WitchAttack::OnStart'");
 	}
 	
-	if(OnAnimationEvent != 0)
+	if (OnAnimationEvent != 0)
 	{
 		StoreToAddress(OnAnimationEvent, OnAnimationEventBytesStore[0], NumberType_Int8);
 		StoreToAddress(OnAnimationEvent + 1, OnAnimationEventBytesStore[1], NumberType_Int8);
 		PrintToServer("WitchPatch restored 'WitchAttack::OnAnimationEvent'");
 	}
 	
-	if(Update != 0)
+	if (Update != 0)
 	{
-		for(int i = 0; i <= 5; i++)
+		for (int i = 0; i <= 5; i++)
 		{
 			StoreToAddress(Update + i, UpdateBytesStore[i], NumberType_Int8);
 		}
