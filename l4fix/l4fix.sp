@@ -24,9 +24,10 @@
 #include <dhooks>
 
 #pragma newdecls required
+#pragma dynamic 16384
 
 #define GAMEDATA "l4fix"
-#define PLUGIN_VERSION	"1.1.0"
+#define PLUGIN_VERSION	"1.1.1"
 
 int g_iWitchHarasser[2049];
 float g_fLastMeleeSwing[33];
@@ -231,106 +232,107 @@ public void OnPluginStart()
 		
 		StoreToAddress(GetVictim, 0xEB, NumberType_Int8);
 		PrintToServer("WitchPatch Targeting patch applied 'WitchAttack::GetVictim'");
-		
-		return;
-	}
-	if (byte == 0x75)
-	{
-		GetVictim = patch + offset;
-		
-		GetVictimBytesStore[0] = LoadFromAddress(GetVictim, NumberType_Int8);
-		GetVictimBytesStore[1] = LoadFromAddress(GetVictim + 1, NumberType_Int8);
-		
-		StoreToAddress(GetVictim, 0x90, NumberType_Int8);
-		StoreToAddress(GetVictim + 1, 0x90, NumberType_Int8);
-		
-		PrintToServer("WitchPatch Targeting patch applied 'WitchAttack::GetVictim'");
 	}
 	else
 	{
-		LogError("Incorrect offset for 'WitchAttack::GetVictim'.");
-	}
-	
-	patch = GameConfGetAddress(hGamedata, "WitchAttack::OnStart");
-	if (!patch)
-		SetFailState("Error finding the 'WitchAttack::OnStart' signature.");
-	
-	offset = GameConfGetOffset(hGamedata, "WitchAttack::OnStart");
-	if (offset == -1)
-		SetFailState("Invalid offset for 'WitchAttack::OnStart'.");
-	
-	byte = LoadFromAddress(patch + offset, NumberType_Int8);
-	if (byte == 0x75)
-	{
-		OnStart = patch + offset;
-		
-		for (int i = 0; i <= 5; i++)
+		if (byte == 0x75)
 		{
-			OnStartBytesStore[i] = LoadFromAddress(OnStart + i, NumberType_Int8);
+			GetVictim = patch + offset;
+			
+			GetVictimBytesStore[0] = LoadFromAddress(GetVictim, NumberType_Int8);
+			GetVictimBytesStore[1] = LoadFromAddress(GetVictim + 1, NumberType_Int8);
+			
+			StoreToAddress(GetVictim, 0x90, NumberType_Int8);
+			StoreToAddress(GetVictim + 1, 0x90, NumberType_Int8);
+			
+			PrintToServer("WitchPatch Targeting patch applied 'WitchAttack::GetVictim'");
+		}
+		else
+		{
+			LogError("Incorrect offset for 'WitchAttack::GetVictim'.");
 		}
 		
-		StoreToAddress(OnStart, 0x90, NumberType_Int8);
-		StoreToAddress(OnStart + 1, 0x90, NumberType_Int8);
+		patch = GameConfGetAddress(hGamedata, "WitchAttack::OnStart");
+		if (!patch)
+			SetFailState("Error finding the 'WitchAttack::OnStart' signature.");
 		
-		PrintToServer("WitchPatch Targeting patch applied 'WitchAttack::OnStart'");
-	}
-	else
-	{
-		LogError("Incorrect offset for 'WitchAttack::OnStart'.");
-	}
-	
-	patch = GameConfGetAddress(hGamedata, "WitchAttack::OnAnimationEvent");
-	if (!patch)
-		SetFailState("Error finding the 'WitchAttack::OnAnimationEvent' signature.");
-	
-	offset = GameConfGetOffset(hGamedata, "WitchAttack::OnAnimationEvent");
-	if (offset == -1)
-		SetFailState("Invalid offset for 'WitchAttack::OnAnimationEvent'.");
-	
-	byte = LoadFromAddress(patch + offset, NumberType_Int8);
-	if (byte == 0x75)
-	{
-		OnAnimationEvent = patch + offset;
+		offset = GameConfGetOffset(hGamedata, "WitchAttack::OnStart");
+		if (offset == -1)
+			SetFailState("Invalid offset for 'WitchAttack::OnStart'.");
 		
-		OnAnimationEventBytesStore[0] = LoadFromAddress(OnAnimationEvent, NumberType_Int8);
-		OnAnimationEventBytesStore[1] = LoadFromAddress(OnAnimationEvent + 1, NumberType_Int8);
-		
-		StoreToAddress(OnAnimationEvent, 0x90, NumberType_Int8);
-		StoreToAddress(OnAnimationEvent + 1, 0x90, NumberType_Int8);
-		
-		PrintToServer("WitchPatch Targeting patch applied 'WitchAttack::OnAnimationEvent'");
-	}
-	else
-	{
-		LogError("Incorrect offset for 'WitchAttack::OnAnimationEvent'.");
-	}
-	
-	patch = GameConfGetAddress(hGamedata, "WitchAttack::Update");
-	if (!patch)
-		SetFailState("Error finding the 'WitchAttack::Update' signature.");
-	
-	offset = GameConfGetOffset(hGamedata, "WitchAttack::Update");
-	if (offset == -1)
-		SetFailState("Invalid offset for 'WitchAttack::Update'.");
-	
-	byte = LoadFromAddress(patch + offset, NumberType_Int8);
-	if (byte == 0x75)
-	{
-		Update = patch + offset;
-		
-		for (int i = 0; i <= 5; i++)
+		byte = LoadFromAddress(patch + offset, NumberType_Int8);
+		if (byte == 0x75)
 		{
-			UpdateBytesStore[i] = LoadFromAddress(Update + i, NumberType_Int8);
+			OnStart = patch + offset;
+			
+			for (int i = 0; i <= 5; i++)
+			{
+				OnStartBytesStore[i] = LoadFromAddress(OnStart + i, NumberType_Int8);
+			}
+			
+			StoreToAddress(OnStart, 0x90, NumberType_Int8);
+			StoreToAddress(OnStart + 1, 0x90, NumberType_Int8);
+			
+			PrintToServer("WitchPatch Targeting patch applied 'WitchAttack::OnStart'");
+		}
+		else
+		{
+			LogError("Incorrect offset for 'WitchAttack::OnStart'.");
 		}
 		
-		StoreToAddress(Update, 0x90, NumberType_Int8);
-		StoreToAddress(Update + 1, 0x90, NumberType_Int8);
+		patch = GameConfGetAddress(hGamedata, "WitchAttack::OnAnimationEvent");
+		if (!patch)
+			SetFailState("Error finding the 'WitchAttack::OnAnimationEvent' signature.");
 		
-		PrintToServer("WitchPatch Targeting patch applied 'WitchAttack::Update'");
-	}
-	else
-	{
-		LogError("Incorrect offset for 'WitchAttack::Update'.");
+		offset = GameConfGetOffset(hGamedata, "WitchAttack::OnAnimationEvent");
+		if (offset == -1)
+			SetFailState("Invalid offset for 'WitchAttack::OnAnimationEvent'.");
+		
+		byte = LoadFromAddress(patch + offset, NumberType_Int8);
+		if (byte == 0x75)
+		{
+			OnAnimationEvent = patch + offset;
+			
+			OnAnimationEventBytesStore[0] = LoadFromAddress(OnAnimationEvent, NumberType_Int8);
+			OnAnimationEventBytesStore[1] = LoadFromAddress(OnAnimationEvent + 1, NumberType_Int8);
+			
+			StoreToAddress(OnAnimationEvent, 0x90, NumberType_Int8);
+			StoreToAddress(OnAnimationEvent + 1, 0x90, NumberType_Int8);
+			
+			PrintToServer("WitchPatch Targeting patch applied 'WitchAttack::OnAnimationEvent'");
+		}
+		else
+		{
+			LogError("Incorrect offset for 'WitchAttack::OnAnimationEvent'.");
+		}
+		
+		patch = GameConfGetAddress(hGamedata, "WitchAttack::Update");
+		if (!patch)
+			SetFailState("Error finding the 'WitchAttack::Update' signature.");
+		
+		offset = GameConfGetOffset(hGamedata, "WitchAttack::Update");
+		if (offset == -1)
+			SetFailState("Invalid offset for 'WitchAttack::Update'.");
+		
+		byte = LoadFromAddress(patch + offset, NumberType_Int8);
+		if (byte == 0x75)
+		{
+			Update = patch + offset;
+			
+			for (int i = 0; i <= 5; i++)
+			{
+				UpdateBytesStore[i] = LoadFromAddress(Update + i, NumberType_Int8);
+			}
+			
+			StoreToAddress(Update, 0x90, NumberType_Int8);
+			StoreToAddress(Update + 1, 0x90, NumberType_Int8);
+			
+			PrintToServer("WitchPatch Targeting patch applied 'WitchAttack::Update'");
+		}
+		else
+		{
+			LogError("Incorrect offset for 'WitchAttack::Update'.");
+		}
 	}
 	
 	delete hGamedata;
