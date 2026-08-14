@@ -126,7 +126,7 @@ void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 		PrintRemainingTankHP();
 
 	if (g_cvShowCommon.IntValue > 0)
-		PrintTopFrags(false);
+		PrintTopFrags(0, false);
 
 	if (g_cvShowFrags.IntValue > 0)
 		PrintTopFrags();
@@ -323,7 +323,7 @@ void PrintTopFrags(int client = 0, bool bFrags = true)
 	else
 	{
 		CPrintToChatAll(msg);
-		ResetKills();
+		ResetKills(bFrags ? g_iKills : g_iKillsCommon);
 	}
 }
 
@@ -497,13 +497,10 @@ bool IsIncapacitated(int client)
 	return GetEntProp(client, Prop_Send, "m_isIncapacitated", 1);
 }
 
-void ResetKills()
+void ResetKills(int iKills[L4D_MAXPLAYERS + 1])
 {
 	for (int i = 1; i <= MaxClients; i++)
-	{
-		g_iKills[i]	= 0;
-		g_iKillsCommon[i] = 0;
-	}
+		iKills[i] = 0;
 }
 
 void ResetTankDamage()
