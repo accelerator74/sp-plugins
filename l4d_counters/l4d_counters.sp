@@ -58,7 +58,7 @@ public void OnPluginStart()
 	HookEvent("witch_killed", Event_WitchKilled,  EventHookMode_Post);
 
 	RegConsoleCmd("sm_frags", Cmd_ShowFrags, "Show current frags");
-	RegConsoleCmd("sm_kills", Cmd_ShowKills, "Show current common kills");
+	RegConsoleCmd("sm_kills", Cmd_ShowKills, "Show current CI kills");
 
 	// L4D2 tank class = 8
 	char gameFolder[24];
@@ -303,7 +303,7 @@ void PrintTopFrags(int client = 0, bool bFrags = true)
 	SortCustom2D(data, count, SortByDamageDesc);
 
 	char msg[256];
-	FormatEx(msg, sizeof(msg), "%s: ", bFrags ? "Frags" : "Common Kills");
+	FormatEx(msg, sizeof(msg), "%s: ", bFrags ? "Frags" : "CI Kills");
 
 	int id, frags, printed = 0;
 	bool first = true;
