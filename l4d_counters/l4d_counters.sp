@@ -149,7 +149,7 @@ void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 			// Common infected kill
 			g_iKillsCommon[attacker]++;
 
-			if (g_cvShowFrags.IntValue == 2)
+			if (g_cvShowCommon.IntValue == 2)
 			{
 				PrintCenterText(attacker, "%d", g_iKillsCommon[attacker]);
 			}
@@ -273,7 +273,7 @@ void OnTankKilled(int attacker)
 //  Display functions
 // ────────────────────────────────────────────────
 
-void PrintTopFrags(int client = 0, bool bosses = true)
+void PrintTopFrags(int client = 0, bool bFrags = true)
 {
 	if (!g_bAllowPrints)
 		return;
@@ -282,7 +282,7 @@ void PrintTopFrags(int client = 0, bool bosses = true)
 	int count = 0;
 
 	int iKills[L4D_MAXPLAYERS + 1];
-	iKills = (bosses ? g_iKills : g_iKillsCommon);
+	iKills = (bFrags ? g_iKills : g_iKillsCommon);
 
 	for (int i = 1; i <= MaxClients; i++)
 	{
@@ -303,7 +303,7 @@ void PrintTopFrags(int client = 0, bool bosses = true)
 	SortCustom2D(data, count, SortByDamageDesc);
 
 	char msg[256];
-	FormatEx(msg, sizeof(msg), "%s: ", bosses ? "Frags" : "Common Kills");
+	FormatEx(msg, sizeof(msg), "%s: ", bFrags ? "Frags" : "Common Kills");
 
 	int id, frags, printed = 0;
 	bool first = true;
