@@ -84,7 +84,7 @@ public void OnPluginStart()
 {
 	g_cvShowFrags	   	= CreateConVar("counters_show_frags", "1", "0 = off, 1 = end of round, 2 = after each kill", _, true, 0.0, true, 2.0);
 	g_cvShowCommon	   	= CreateConVar("counters_show_common", "1", "0 = off, 1 = end of round, 2 = after each kill", _, true, 0.0, true, 2.0);
-	g_cvShowInHud	   	= CreateConVar("counters_show_hud", "1", "0 = chat, 1 = hud (L4D2 only)", _, true, 0.0, true, 2.0);
+	g_cvShowInHud	   	= CreateConVar("counters_show_hud", "1", "0 = chat, 1 = hud (L4D2 only)");
 	g_cvShowTankDamage  = CreateConVar("counters_show_tank_damage", "1", "Show tank damage statistics");
 	g_cvShowWitchDamage = CreateConVar("counters_show_witch_damage", "0", "Show witch damage statistics");
 	g_cvShowTankHP	  	= CreateConVar("counters_show_tank_hp", "1", "Show remaining tank HP when round ends");
