@@ -2,22 +2,23 @@
 #pragma newdecls required
 
 #include <sourcemod>
+#include <sdktools>
 #include <colors>
 
-#define PLUGIN_VERSION	  "1.2.3"
-#define MAX_LINE_WIDTH	  64
-#define L4D_MAXPLAYERS	  32
-#define MAX_TOP_PLAYERS	 5
+#define MAX_LINE_WIDTH		64
+#define L4D_MAXPLAYERS		32
+#define MAX_TOP_PLAYERS		5
 
-#define TEAM_SPECTATORS	 1
-#define TEAM_SURVIVORS	  2
-#define TEAM_INFECTED	   3
+#define TEAM_SPECTATORS	 	1
+#define TEAM_SURVIVORS	  	2
+#define TEAM_INFECTED	  	3
 
 int g_iTankClass = 5;   // L4D1 default
 
 // ConVars
 ConVar g_cvShowFrags;
 ConVar g_cvShowCommon;
+ConVar g_cvShowInHud;
 ConVar g_cvShowTankDamage;
 ConVar g_cvShowWitchDamage;
 ConVar g_cvShowTankHP;
@@ -30,19 +31,60 @@ int g_iWitchDamage[L4D_MAXPLAYERS + 1];
 
 bool g_bAllowPrints;
 
+// "L4D2 EMS HUD Functions" by "sorallll"
+
+enum
+{
+	HUD_LEFT_TOP,
+	HUD_LEFT_BOT,
+	HUD_MID_TOP,
+	HUD_MID_BOT,
+	HUD_RIGHT_TOP,
+	HUD_RIGHT_BOT,
+	HUD_TICKER,
+	HUD_FAR_LEFT,
+	HUD_FAR_RIGHT,
+	HUD_MID_BOX,
+	HUD_SCORE_TITLE,
+	HUD_SCORE_1,
+	HUD_SCORE_2,
+	HUD_SCORE_3,
+	HUD_SCORE_4
+};
+
+// custom flags for background, time, alignment, which team, pre or postfix, etc
+#define HUD_FLAG_PRESTR			(1<<0)	//	do you want a string/value pair to start(pre) or end(post) with the static string (default is PRE)
+#define HUD_FLAG_POSTSTR		(1<<1)	//	ditto
+#define HUD_FLAG_BEEP			(1<<2)	//	Makes a countdown timer blink
+#define HUD_FLAG_BLINK			(1<<3)	//	do you want this field to be blinking
+#define HUD_FLAG_AS_TIME		(1<<4)	//	to do..
+#define HUD_FLAG_COUNTDOWN_WARN	(1<<5)	//	auto blink when the timer gets under 10 seconds
+#define HUD_FLAG_NOBG			(1<<6)	//	dont draw the background box for this UI element
+#define HUD_FLAG_ALLOWNEGTIMER	(1<<7)	//	by default Timers stop on 0:00 to avoid briefly going negative over network, this keeps that from happening
+#define HUD_FLAG_ALIGN_LEFT		(1<<8)	//	Left justify this text
+#define HUD_FLAG_ALIGN_CENTER	(1<<9)	//	Center justify this text
+#define HUD_FLAG_ALIGN_RIGHT	(3<<8)	//	Right justify this text
+#define HUD_FLAG_TEAM_SURVIVORS	(1<<10)	//	only show to the survivor team
+#define HUD_FLAG_TEAM_INFECTED	(1<<11)	//	only show to the special infected team
+#define HUD_FLAG_TEAM_MASK		(3<<10)	//	link HUD_FLAG_TEAM_SURVIVORS and HUD_FLAG_TEAM_INFECTED
+#define HUD_FLAG_UNKNOWN1		(1<<12)	//	?
+#define HUD_FLAG_TEXT			(1<<13)	//	?
+#define HUD_FLAG_NOTVISIBLE		(1<<14)	//	if you want to keep the slot data but keep it from displaying
+
 public Plugin myinfo =
 {
 	name = "L4D1/2 Damage & Frags Counters",
 	author = "Jonny, Accelerator, Grok",
 	description = "Shows frags, tank/witch damage statistics",
-	version = PLUGIN_VERSION,
+	version = "2.0",
 	url = "https://github.com/accelerator74/sp-plugins"
 };
 
 public void OnPluginStart()
 {
 	g_cvShowFrags	   	= CreateConVar("counters_show_frags", "1", "0 = off, 1 = end of round, 2 = after each kill", _, true, 0.0, true, 2.0);
-	g_cvShowCommon	   	= CreateConVar("counters_show_common", "0", "0 = off, 1 = end of round, 2 = after each kill", _, true, 0.0, true, 2.0);
+	g_cvShowCommon	   	= CreateConVar("counters_show_common", "1", "0 = off, 1 = end of round, 2 = after each kill", _, true, 0.0, true, 2.0);
+	g_cvShowInHud	   	= CreateConVar("counters_show_hud", "1", "0 = chat, 1 = hud (L4D2 only)", _, true, 0.0, true, 2.0);
 	g_cvShowTankDamage  = CreateConVar("counters_show_tank_damage", "1", "Show tank damage statistics");
 	g_cvShowWitchDamage = CreateConVar("counters_show_witch_damage", "0", "Show witch damage statistics");
 	g_cvShowTankHP	  	= CreateConVar("counters_show_tank_hp", "1", "Show remaining tank HP when round ends");
@@ -71,6 +113,14 @@ public void OnPluginStart()
 
 public void OnMapStart()
 {
+	if (g_iTankClass == 8)
+	{
+		GameRules_SetProp("m_bChallengeModeActive", true, _, _, true);
+
+		RemoveHUD(HUD_MID_TOP);
+		RemoveHUD(HUD_MID_BOT);
+	}
+
 	ResetAllCounters();
 }
 
@@ -80,6 +130,34 @@ public void OnClientDisconnect(int client)
 	g_iKillsCommon[client] = 0;
 	g_iTankDamage[client]  = 0;
 	g_iWitchDamage[client] = 0;
+}
+
+void HudSet()
+{
+	GameRules_SetProp("m_iScriptedHUDFlags", HUD_FLAG_TEXT|HUD_FLAG_ALIGN_CENTER, _, HUD_MID_TOP, true);
+	GameRules_SetProp("m_iScriptedHUDFlags", HUD_FLAG_TEXT|HUD_FLAG_ALIGN_CENTER, _, HUD_MID_BOT, true);
+
+	GameRules_SetPropFloat("m_fScriptedHUDPosX", 0.28, HUD_MID_TOP, true);
+	GameRules_SetPropFloat("m_fScriptedHUDPosY", 0.2, HUD_MID_TOP, true);
+	GameRules_SetPropFloat("m_fScriptedHUDWidth", 0.2, HUD_MID_TOP, true);
+	GameRules_SetPropFloat("m_fScriptedHUDHeight", 0.17, HUD_MID_TOP, true);
+
+	GameRules_SetPropFloat("m_fScriptedHUDPosX", 0.52, HUD_MID_BOT, true);
+	GameRules_SetPropFloat("m_fScriptedHUDPosY", 0.2, HUD_MID_BOT, true);
+	GameRules_SetPropFloat("m_fScriptedHUDWidth", 0.2, HUD_MID_BOT, true);
+	GameRules_SetPropFloat("m_fScriptedHUDHeight", 0.17, HUD_MID_BOT, true);
+}
+
+void RemoveHUD(int slot)
+{
+	GameRules_SetProp("m_iScriptedHUDInts", 0, _, slot, true);
+	GameRules_SetPropFloat("m_fScriptedHUDFloats", 0.0, slot, true);
+	GameRules_SetProp("m_iScriptedHUDFlags", HUD_FLAG_NOTVISIBLE, _, slot, true);
+	GameRules_SetPropFloat("m_fScriptedHUDPosX", 0.0, slot, true);
+	GameRules_SetPropFloat("m_fScriptedHUDPosY", 0.0, slot, true);
+	GameRules_SetPropFloat("m_fScriptedHUDWidth", 0.0, slot, true);
+	GameRules_SetPropFloat("m_fScriptedHUDHeight", 0.0, slot, true);
+	GameRules_SetPropString("m_szScriptedHUDStringSet", "", true, slot);
 }
 
 void ResetAllCounters()
@@ -114,6 +192,12 @@ Action Cmd_ShowKills(int client, int args)
 
 void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 {
+	if (g_iTankClass == 8)
+	{
+		RemoveHUD(HUD_MID_TOP);
+		RemoveHUD(HUD_MID_BOT);
+	}
+
 	ResetAllCounters();
 }
 
@@ -121,6 +205,9 @@ void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
 	if (!g_bAllowPrints)
 		return;
+
+	if (g_iTankClass == 8)
+		HudSet();
 
 	if (g_cvShowTankHP.BoolValue)
 		PrintRemainingTankHP();
@@ -302,18 +389,35 @@ void PrintTopFrags(int client = 0, bool bFrags = true)
 
 	SortCustom2D(data, count, SortByDamageDesc);
 
-	char msg[256];
+	char msg[255], name[32];
 	FormatEx(msg, sizeof(msg), "%s: ", bFrags ? "Frags" : "CI Kills");
 
-	int id, frags, printed = 0;
+	char hudmsg[255];
+	strcopy(hudmsg, sizeof(hudmsg), msg);
+
+	int id, frags, printed, len;
 	bool first = true;
 
 	for (int i = 0; i < count && printed < MAX_TOP_PLAYERS; i++)
 	{
-		id   = data[i][0];
+		id = data[i][0];
 		frags = data[i][1];
-		if (!first) Format(msg, sizeof(msg), "%s, ", msg);
-		Format(msg, sizeof(msg), "%s{blue}%N{default} %d", msg, id, frags);
+
+		GetClientShortName(id, name, sizeof(name));
+
+		len = strlen(hudmsg);
+		FormatEx(hudmsg[len], sizeof(hudmsg)-len, "\n%s — %d", name, frags);
+
+		len = strlen(msg);
+		if (g_iTankClass == 8 && !client)
+		{
+			FormatEx(msg[len], sizeof(msg)-len, "%s%s %d", (first ? "" : ", "), name, frags);
+		}
+		else
+		{
+			FormatEx(msg[len], sizeof(msg)-len, "%s{blue}%s{default} %d", (first ? "" : ", "), name, frags);
+		}
+
 		first = false;
 		printed++;
 	}
@@ -322,7 +426,15 @@ void PrintTopFrags(int client = 0, bool bFrags = true)
 		CPrintToChat(client, msg);
 	else
 	{
-		CPrintToChatAll(msg);
+		if (g_iTankClass == 8 && g_cvShowInHud.BoolValue)
+		{
+			GameRules_SetPropString("m_szScriptedHUDStringSet", hudmsg, true, (bFrags ? HUD_MID_TOP : HUD_MID_BOT));
+			PrintToConsoleAll(msg);
+		}
+		else
+		{
+			CPrintToChatAll(msg);
+		}
 		ResetKills(bFrags ? g_iKills : g_iKillsCommon);
 	}
 }
@@ -338,19 +450,23 @@ void PrintTopTankDamage(bool killed)
 	if (count == 0)
 		return;
 
-	char msg[256];
+	char msg[255], name[32];
 	FormatEx(msg, sizeof(msg), "{green}Tank(s){default} %s by ",
 		killed ? "was killed" : "was damaged");
 
-	int id, dmg, printed = 0;
+	int id, dmg, printed, len;
 	bool first = true;
 
 	for (int i = 0; i < count && printed < MAX_TOP_PLAYERS; i++)
 	{
 		id = data[i][0];
 		dmg = data[i][1];
-		if (!first) Format(msg, sizeof(msg), "%s, ", msg);
-		Format(msg, sizeof(msg), "%s{blue}%N{default}: %d", msg, id, dmg);
+
+		GetClientShortName(id, name, sizeof(name));
+
+		len = strlen(msg);
+		FormatEx(msg[len], sizeof(msg)-len, "%s{blue}%s{default}: %d", (first ? "" : ", "), name, dmg);
+
 		first = false;
 		printed++;
 	}
@@ -369,18 +485,22 @@ void PrintTopWitchDamage()
 	if (count == 0)
 		return;
 
-	char msg[256];
+	char msg[255], name[32];
 	FormatEx(msg, sizeof(msg), "{green}Witch{default} was killed by ");
 
-	int id, dmg, printed = 0;
+	int id, dmg, printed, len;
 	bool first = true;
 
 	for (int i = 0; i < count && printed < MAX_TOP_PLAYERS; i++)
 	{
 		id = data[i][0];
 		dmg = data[i][1];
-		if (!first) Format(msg, sizeof(msg), "%s, ", msg);
-		Format(msg, sizeof(msg), "%s{blue}%N{default}: %d", msg, id, dmg);
+
+		GetClientShortName(id, name, sizeof(name));
+
+		len = strlen(msg);
+		FormatEx(msg[len], sizeof(msg)-len, "%s{blue}%s{default}: %d", (first ? "" : ", "), name, dmg);
+
 		first = false;
 		printed++;
 	}
@@ -495,6 +615,22 @@ bool IsTank(int client)
 bool IsIncapacitated(int client)
 {
 	return GetEntProp(client, Prop_Send, "m_isIncapacitated", 1);
+}
+
+void GetClientShortName(int client, char[] buffer, int maxlen)
+{
+	char sName[32];
+	GetClientName(client, sName, sizeof(sName));
+
+	if (strlen(sName) > 25)
+	{
+		sName[23] = '.';
+		sName[24] = '.';
+		sName[25] = '.';
+		sName[26] = 0;
+	}
+
+	strcopy(buffer, maxlen, sName);
 }
 
 void ResetKills(int iKills[L4D_MAXPLAYERS + 1])
