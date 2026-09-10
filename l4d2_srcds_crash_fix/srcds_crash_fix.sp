@@ -6,16 +6,9 @@
 
 public void OnPluginStart()
 {
-	Handle hGameConf = LoadGameConfigFile("srcds_crash_fix");
+	GameData hGameConf = new GameData("srcds_crash_fix");
 	if( hGameConf == null ) SetFailState("Failed to load gamedata/srcds_crash_fix.");
-/*
-	Handle hDetour = DHookCreateFromConf(hGameConf, "CSoundPatch::ChangePitch");
-	if( !hDetour )
-		SetFailState("Failed to find \"CSoundPatch::ChangePitch\" signature.");
-	if( !DHookEnableDetour(hDetour, false, ChangePitch) )
-		SetFailState("Failed to detour \"CSoundPatch::ChangePitch\".");
-	delete hDetour;
-*/
+
 	Handle hDetour = DHookCreateFromConf(hGameConf, "CSoundControllerImp::SoundChangePitch");
 	if( !hDetour )
 		SetFailState("Failed to find \"CSoundControllerImp::SoundChangePitch\" signature.");
@@ -23,18 +16,18 @@ public void OnPluginStart()
 		SetFailState("Failed to detour \"CSoundControllerImp::SoundChangePitch\".");
 	delete hDetour;
 
-	int offset = GameConfGetOffset(hGameConf, "LagCompensationOffset");
-	Address patch = GameConfGetAddress(hGameConf, "StartLagCompensation");
+	int offset = hGameConf.GetOffset("LagCompensationOffset");
+	Address patch = hGameConf.GetAddress("StartLagCompensation");
 	if( !patch ) SetFailState("Error finding the 'StartLagCompensation' signature.");
-	int byte = LoadFromAddress(patch + offset, NumberType_Int8);
+	int byte = LoadFromAddress(patch + view_as<Address>(offset), NumberType_Int8);
 	if( byte == 0x0F )
 	{
-		StoreToAddress(patch + offset, 0x74, NumberType_Int8);
-		StoreToAddress(patch + offset + 1, 0xA4, NumberType_Int8);
-		StoreToAddress(patch + offset + 2, 0x90, NumberType_Int8);
-		StoreToAddress(patch + offset + 3, 0x90, NumberType_Int8);
-		StoreToAddress(patch + offset + 4, 0x90, NumberType_Int8);
-		StoreToAddress(patch + offset + 5, 0x90, NumberType_Int8);
+		StoreToAddress(patch + view_as<Address>(offset), 0x74, NumberType_Int8);
+		StoreToAddress(patch + view_as<Address>(offset + 1), 0xA4, NumberType_Int8);
+		StoreToAddress(patch + view_as<Address>(offset + 2), 0x90, NumberType_Int8);
+		StoreToAddress(patch + view_as<Address>(offset + 3), 0x90, NumberType_Int8);
+		StoreToAddress(patch + view_as<Address>(offset + 4), 0x90, NumberType_Int8);
+		StoreToAddress(patch + view_as<Address>(offset + 5), 0x90, NumberType_Int8);
 	}
 	else
 	{
@@ -42,27 +35,27 @@ public void OnPluginStart()
 	}
 
 	// Ladder crash fix (by Silvers)
-	offset = GameConfGetOffset(hGameConf, "Patch_ChaseVictim");
-	patch = GameConfGetAddress(hGameConf, "ChaseVictim::Update");
+	offset = hGameConf.GetOffset("Patch_ChaseVictim");
+	patch = hGameConf.GetAddress("ChaseVictim::Update");
 	if( !patch ) SetFailState("Error finding the 'ChaseVictim::Update' signature.");
-	byte = LoadFromAddress(patch + offset, NumberType_Int8);
+	byte = LoadFromAddress(patch + view_as<Address>(offset), NumberType_Int8);
 	if( byte == 0xE8 )
 	{
 		for( int i = 0; i < 5; i++ )
-			StoreToAddress(patch + offset + i, 0x90, NumberType_Int8);
+			StoreToAddress(patch + view_as<Address>(offset + i), 0x90, NumberType_Int8);
 	}
 	else if( byte != 0x90 )
 	{
 		SetFailState("Error: the \"Patch_ChaseVictim\" offset %d is incorrect.", offset);
 	}
-	offset = GameConfGetOffset(hGameConf, "Patch_InfectedFlee");
-	patch = GameConfGetAddress(hGameConf, "InfectedFlee::Update");
+	offset = hGameConf.GetOffset("Patch_InfectedFlee");
+	patch = hGameConf.GetAddress("InfectedFlee::Update");
 	if( !patch ) SetFailState("Error finding the 'InfectedFlee::Update' signature.");
-	byte = LoadFromAddress(patch + offset, NumberType_Int8);
+	byte = LoadFromAddress(patch + view_as<Address>(offset), NumberType_Int8);
 	if( byte == 0xE8 )
 	{
 		for( int i = 0; i < 5; i++ )
-			StoreToAddress(patch + offset + i, 0x90, NumberType_Int8);
+			StoreToAddress(patch + view_as<Address>(offset + i), 0x90, NumberType_Int8);
 	}
 	else if( byte != 0x90 )
 	{
@@ -75,19 +68,6 @@ public void OnPluginStart()
 	HookEvent("player_hurt", Event_PlayerHurt, EventHookMode_Pre);
 }
 
-// CChainsaw::ItemPostFrame() crash fix
-/*
-public MRESReturn ChangePitch(int pThis, Handle hReturn, Handle hParams)
-{
-	if(!pThis)
-	{
-		DHookSetReturn(hReturn, 0);
-		return MRES_Supercede;
-	}
-	
-	return MRES_Ignored;
-}
-*/
 MRESReturn SoundChangePitch(Handle hReturn, Handle hParams)
 {
 	int SoundPatch = DHookGetParam(hParams, 1);
@@ -100,54 +80,49 @@ MRESReturn SoundChangePitch(Handle hReturn, Handle hParams)
 	return MRES_Ignored;
 }
 
-// CMoveableCamera::FollowTarget crash fix (by shqke)
 public void OnClientDisconnect(int client)
 {
-    if (!IsClientInGame(client)) {
-        return;
-    }
-    
-    int viewEntity = GetEntPropEnt(client, Prop_Send, "m_hViewEntity");
-    if (!IsValidEdict(viewEntity)) {
-        return;
-    }
-    
-    char cls[64];
-    GetEdictClassname(viewEntity, cls, sizeof(cls));
-    if (strncmp(cls, "point_viewcontrol", 17) == 0) {
-        // Matches CSurvivorCamera, CTriggerCamera
-        if (strcmp(cls[17], "_survivor") == 0 || cls[17] == '\0') {
-            // Disable entity to prevent CMoveableCamera::FollowTarget to cause a crash
-            // m_hTargetEnt EHANDLE is not checked for existence and can be NULL
-            // CBaseEntity::GetAbsAngles being called on causing a crash
-            AcceptEntityInput(viewEntity, "Disable");
-        }
-        
-        // Matches CTriggerCameraMultiplayer
-        if (strcmp(cls[17], "_multiplayer") == 0) {
-            AcceptEntityInput(viewEntity, "RemovePlayer", client);
-        }
-    }
+    if (client > 0 && IsClientInGame(client))
+	{
+		int viewEntity = GetEntPropEnt(client, Prop_Send, "m_hViewEntity");
+		if (IsValidEdict(viewEntity))
+		{
+			char cls[64];
+			GetEdictClassname(viewEntity, cls, sizeof(cls));
+			if (strncmp(cls, "point_viewcontrol", 17) == 0)
+			{
+				// Matches CSurvivorCamera, CTriggerCamera
+				if (strcmp(cls[17], "_survivor") == 0 || cls[17] == '\0')
+				{
+					AcceptEntityInput(viewEntity, "Disable");
+				}
+
+				// Matches CTriggerCameraMultiplayer
+				if (strcmp(cls[17], "_multiplayer") == 0)
+				{
+					AcceptEntityInput(viewEntity, "RemovePlayer", client);
+				}
+			}
+		}
+	}
 }
 
-void Event_round_start_pre_entity(Event event, const char[] name, bool dontBroadcast)
+stock void Event_round_start_pre_entity(Event event, const char[] name, bool dontBroadcast)
 {
     int entity = INVALID_ENT_REFERENCE;
-    while ((entity = FindEntityByClassname(entity, "point_viewcontrol*")) != INVALID_ENT_REFERENCE) {
-        // Invoke a "Disable" input on camera entities to free all players
-        // Doing so on round_start_pre_entity should help to not let map logic kick in too early
+    while ((entity = FindEntityByClassname(entity, "point_viewcontrol*")) != INVALID_ENT_REFERENCE)
+	{
         AcceptEntityInput(entity, "Disable");
     }
 }
 
-// AwardTemplate crash fix
-Action Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
+stock Action Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
 {
 	int target = GetClientOfUserId(event.GetInt("userid"));
-	
 	if (target >= 32 && GetEntProp(target, Prop_Send, "m_iTeamNum") == 2)
+	{
 		return Plugin_Handled;
-	
+	}
 	return Plugin_Continue;
 }
 
