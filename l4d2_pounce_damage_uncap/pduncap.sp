@@ -1,182 +1,181 @@
 #include <sourcemod>
+#include <sdkhooks>
 
 #pragma newdecls required
 #pragma semicolon 1
 
-Address g_pFuncAddress;
-int g_iMinRangeOffset;
-int g_iMaxRangeOffset;
-int g_iScaleOffset;
-int g_iNegativeMinRangeOffset;
-
-Address g_pMinRangeData;
-Address g_pMaxRangeData;
-Address g_pRangeScaleData;
-Address g_pNegativeMinRangeData;
-
-float g_flMinRange = 300.0;
-float g_flMaxRange = 1000.0;
-float g_fRangeScaleFactor;
-float g_flNegativeMinRange = -300.0;
-
 ConVar g_hMinRange;
 ConVar g_hMaxRange;
+ConVar g_hPounceDamage;
+
+float g_flPounceStart[MAXPLAYERS + 1][3];
+bool g_bPounceActive[MAXPLAYERS + 1];
+bool g_bPouncePZMsg[MAXPLAYERS + 1];
 
 public Plugin myinfo =
 {
 	name = "Pounce Damage Uncap",
-	author = "Accelerator & ProdigySim & DeepSeek AI",
+	author = "Accelerator",
 	description = "Patch L4D2 to allow uncapping the pounce range limits",
-	version = "1.0",
+	version = "2.0",
 	url = "https://github.com/accelerator74/sp-plugins"
 };
 
 public void OnPluginStart()
 {
-	g_fRangeScaleFactor = 1.0 / 700.0;
-
 	g_hMinRange = CreateConVar("z_pounce_damage_range_min", "300.0", "Minimum range for a pounce to be worth bonus damage.", FCVAR_GAMEDLL|FCVAR_CHEAT, true, 0.0);
 	g_hMaxRange = CreateConVar("z_pounce_damage_range_max", "1000.0", "Range at which a pounce is worth the maximum bonus damage.", FCVAR_GAMEDLL|FCVAR_CHEAT, true, 0.0);
+	g_hPounceDamage = FindConVar("z_hunter_max_pounce_bonus_damage");
 
-	GameData hGameConf = new GameData("pduncap");
-	if (hGameConf == null)
-		SetFailState("Failed to load gamedata/pduncap.txt");
+	HookUserMessage(GetUserMessageId("PZDmgMsg"), OnPZDmgMsg, true);
 
-	g_pFuncAddress = hGameConf.GetAddress("CTerrorPlayer::OnPouncedOnSurvivor");
-	if (g_pFuncAddress == Address_Null)
-		SetFailState("Failed to find CTerrorPlayer::OnPouncedOnSurvivor address");
+	HookEvent("ability_use", Event_AbilityUse);
+	HookEvent("player_death", Event_PlayerDeath);
+	HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
 
-	g_iMinRangeOffset = hGameConf.GetOffset("MinRange");
-	g_iMaxRangeOffset = hGameConf.GetOffset("MaxRange");
-	g_iScaleOffset = hGameConf.GetOffset("RangeScaleFactor");
-	g_iNegativeMinRangeOffset = hGameConf.GetOffset("NegativeMinRange");
-
-	delete hGameConf;
-
-	if (g_iMinRangeOffset == -1 || g_iMaxRangeOffset == -1 || g_iScaleOffset == -1)
-		SetFailState("Invalid offsets in gamedata");
-
-	GetAddresses();
-
-	g_hMinRange.AddChangeHook(OnRangeChanged_Min);
-	g_hMaxRange.AddChangeHook(OnRangeChanged_Max);
-
-	g_flMinRange = g_hMinRange.FloatValue;
-	g_flMaxRange = g_hMaxRange.FloatValue;
-	RecalculateScaleFactor();
-}
-
-public void OnPluginEnd()
-{
-	g_flMinRange = 300.0;
-	g_flMaxRange = 1000.0;
-	RecalculateScaleFactor();
-}
-
-void GetAddresses()
-{
-	Address pMinPtrAddr = g_pFuncAddress + g_iMinRangeOffset;
-	Address pMaxPtrAddr = g_pFuncAddress + g_iMaxRangeOffset;
-	Address pScalePtrAddr = g_pFuncAddress + g_iScaleOffset;
-	Address pNegPtrAddr = Address_Null;
-
-	g_pMinRangeData = LoadFromAddress(pMinPtrAddr, NumberType_Int32);
-	g_pMaxRangeData = LoadFromAddress(pMaxPtrAddr, NumberType_Int32);
-	g_pRangeScaleData = LoadFromAddress(pScalePtrAddr, NumberType_Int32);
-
-	if (g_pMinRangeData == Address_Null || g_pMaxRangeData == Address_Null || g_pRangeScaleData == Address_Null)
+	for (int i = 1; i <= MaxClients; i++)
 	{
-		SetFailState("Failed to read original pointers!");
-	}
-
-	if (g_iNegativeMinRangeOffset != -1)
-	{
-		pNegPtrAddr = g_pFuncAddress + g_iNegativeMinRangeOffset;
-		g_pNegativeMinRangeData = LoadFromAddress(pNegPtrAddr, NumberType_Int32);
-
-		if (g_pNegativeMinRangeData == Address_Null)
-		{
-			SetFailState("Failed to read NegativeMinRange pointer!");
-		}
-	}
-
-	ReadOriginalValues(pMinPtrAddr, pMaxPtrAddr, pScalePtrAddr, pNegPtrAddr);
-}
-
-void ReadOriginalValues(Address pMinAddr, Address pMaxAddr, Address pScaleAddr, Address pNegAddr)
-{
-	int ptr = LoadFromAddress(pMinAddr, NumberType_Int32);
-	Address pAddr = view_as<Address>(ptr);
-
-	float val = view_as<float>(LoadFromAddress(pAddr, NumberType_Int32));
-	if (val != g_flMinRange)
-	{
-		SetFailState("Invalid 'MinRange' offset");
-	}
-
-	ptr = LoadFromAddress(pMaxAddr, NumberType_Int32);
-	pAddr = view_as<Address>(ptr);
-
-	val = view_as<float>(LoadFromAddress(pAddr, NumberType_Int32));
-	if (val != g_flMaxRange)
-	{
-		SetFailState("Invalid 'MaxRange' offset");
-	}
-
-	ptr = LoadFromAddress(pScaleAddr, NumberType_Int32);
-	pAddr = view_as<Address>(ptr);
-
-	val = view_as<float>(LoadFromAddress(pAddr, NumberType_Int32));
-	if (val != g_fRangeScaleFactor)
-	{
-		SetFailState("Invalid 'RangeScaleFactor' offset");
-	}
-
-	if (g_iNegativeMinRangeOffset != -1)
-	{
-		ptr = LoadFromAddress(pNegAddr, NumberType_Int32);
-		pAddr = view_as<Address>(ptr);
-
-		val = view_as<float>(LoadFromAddress(pAddr, NumberType_Int32));
-		if (val != g_flNegativeMinRange)
-		{
-			SetFailState("Invalid 'NegativeMinRange' offset");
+		if (IsClientInGame(i)) {
+			OnClientPutInServer(i);
 		}
 	}
 }
 
-void RecalculateScaleFactor()
+public void OnClientPutInServer(int client)
 {
-	float diff = g_flMaxRange - g_flMinRange;
-	if (diff == 0.0)
-		g_fRangeScaleFactor = view_as<float>(0x7F7FFFFF); // FLT_MAX
-	else
-		g_fRangeScaleFactor = 1.0 / diff;
-
-	if (g_iNegativeMinRangeOffset != -1)
-		g_flNegativeMinRange = -g_flMinRange;
-
-	if (g_pMinRangeData != Address_Null)
-		StoreToAddress(g_pMinRangeData, view_as<int>(g_flMinRange), NumberType_Int32);
-
-	if (g_pMaxRangeData != Address_Null)
-		StoreToAddress(g_pMaxRangeData, view_as<int>(g_flMaxRange), NumberType_Int32);
-
-	if (g_pRangeScaleData != Address_Null)
-		StoreToAddress(g_pRangeScaleData, view_as<int>(g_fRangeScaleFactor), NumberType_Int32);
-
-	if (g_pNegativeMinRangeData != Address_Null)
-		StoreToAddress(g_pNegativeMinRangeData, view_as<int>(g_flNegativeMinRange), NumberType_Int32);
+	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
 }
 
-void OnRangeChanged_Min(ConVar convar, const char[] oldValue, const char[] newValue)
+public void OnClientDisconnect(int client)
 {
-	g_flMinRange = g_hMinRange.FloatValue;
-	RecalculateScaleFactor();
+	g_bPounceActive[client] = false;
 }
 
-void OnRangeChanged_Max(ConVar convar, const char[] oldValue, const char[] newValue)
+void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 {
-	g_flMaxRange = g_hMaxRange.FloatValue;
-	RecalculateScaleFactor();
+	for (int i = 1; i <= MaxClients; i++)
+		OnClientDisconnect(i);
+}
+
+void Event_AbilityUse(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+
+	if (!client)
+		return;
+
+	if (GetClientTeam(client) != 3)
+		return;
+
+	if (GetEntProp(client, Prop_Send, "m_zombieClass") != 3)
+		return;
+
+	char ability[16];
+	event.GetString("ability", ability, sizeof(ability));
+
+	if (StrEqual(ability, "ability_lunge", false))
+	{
+		GetClientAbsOrigin(client, g_flPounceStart[client]);
+
+		g_bPounceActive[client] = true;
+		g_bPouncePZMsg[client] = false;
+	}
+}
+
+void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+
+	if (!client)
+		return;
+
+	g_bPounceActive[client] = false;
+}
+
+void SendPounceMsg(int attacker, int victim, int damage)
+{
+	Handle msg = StartMessageAll("PZDmgMsg", USERMSG_RELIABLE);
+	if (msg == null)
+		return;
+
+	BfWrite bf = UserMessageToBfWrite(msg);
+
+	bf.WriteByte(12);
+	bf.WriteShort(GetClientUserId(attacker));
+	bf.WriteShort(GetClientUserId(victim));
+	bf.WriteShort(0);
+	bf.WriteShort(damage);
+
+	EndMessage();
+}
+
+Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
+{
+	if (attacker < 1 || attacker > MaxClients)
+		return Plugin_Continue;
+
+	if (!(damagetype & (DMG_SLASH | DMG_CRUSH)))
+		return Plugin_Continue;
+
+	if (!g_bPounceActive[attacker])
+		return Plugin_Continue;
+
+	if (GetClientTeam(victim) != 2 || GetClientTeam(attacker) != 3)
+		return Plugin_Continue;
+
+	if (GetEntProp(attacker, Prop_Send, "m_zombieClass") != 3)
+	{
+		g_bPounceActive[attacker] = false;
+		return Plugin_Continue;
+	}
+
+	float currentPos[3];
+	GetClientAbsOrigin(attacker, currentPos);
+
+	float dist = GetVectorDistance(g_flPounceStart[attacker], currentPos);
+
+	float minRange = g_hMinRange.FloatValue;
+	float maxRange = g_hMaxRange.FloatValue;
+	float maxBonus = g_hPounceDamage.FloatValue;
+
+	float finalDamage = 1.0;
+	float fraction = 0.0;
+
+	if (dist > minRange)
+	{
+		if (dist >= maxRange)
+		{
+			finalDamage = 1.0 + maxBonus;
+			fraction = 1.0;
+		}
+		else
+		{
+			fraction = (dist - minRange) / (maxRange - minRange);
+			finalDamage = 1.0 + (maxBonus * fraction);
+		}
+	}
+
+	damage = finalDamage;
+	g_bPounceActive[attacker] = false;
+
+	g_bPouncePZMsg[attacker] = true;
+	SendPounceMsg(attacker, victim, RoundToNearest(finalDamage));
+	g_bPouncePZMsg[attacker] = false;
+
+	return Plugin_Changed;
+}
+
+Action OnPZDmgMsg(UserMsg msg_id, BfRead bf, const int[] players, int playersNum, bool reliable, bool init)
+{
+	int iMsgType = bf.ReadByte();
+	if (iMsgType != 12)
+	{
+		return Plugin_Continue;
+	}
+
+	int attacker = GetClientOfUserId(BfReadShort(bf));
+	if (g_bPouncePZMsg[attacker])
+		return Plugin_Continue;
+
+	return Plugin_Handled;
 }
