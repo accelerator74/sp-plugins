@@ -17,7 +17,7 @@ public Plugin myinfo =
 	name = "Pounce Damage Uncap",
 	author = "Accelerator",
 	description = "Patch L4D2 to allow uncapping the pounce range limits",
-	version = "2.0",
+	version = "2.1",
 	url = "https://github.com/accelerator74/sp-plugins"
 };
 
@@ -114,20 +114,19 @@ Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, in
 	if (attacker < 1 || attacker > MaxClients)
 		return Plugin_Continue;
 
-	if (!(damagetype & (DMG_SLASH | DMG_CRUSH)))
+	if (damagetype != DMG_CRUSH)
 		return Plugin_Continue;
 
 	if (!g_bPounceActive[attacker])
 		return Plugin_Continue;
 
+	g_bPounceActive[attacker] = false;
+
 	if (GetClientTeam(victim) != 2 || GetClientTeam(attacker) != 3)
 		return Plugin_Continue;
 
 	if (GetEntProp(attacker, Prop_Send, "m_zombieClass") != 3)
-	{
-		g_bPounceActive[attacker] = false;
 		return Plugin_Continue;
-	}
 
 	float currentPos[3];
 	GetClientAbsOrigin(attacker, currentPos);
@@ -135,28 +134,28 @@ Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, in
 	float dist = GetVectorDistance(g_flPounceStart[attacker], currentPos);
 
 	float minRange = g_hMinRange.FloatValue;
-	float maxRange = g_hMaxRange.FloatValue;
-	float maxBonus = g_hPounceDamage.FloatValue;
-
 	float finalDamage = 1.0;
-	float fraction = 0.0;
 
 	if (dist > minRange)
 	{
+		float maxRange = g_hMaxRange.FloatValue;
+		float maxBonus = g_hPounceDamage.FloatValue;
+
 		if (dist >= maxRange)
 		{
 			finalDamage = 1.0 + maxBonus;
-			fraction = 1.0;
 		}
 		else
 		{
-			fraction = (dist - minRange) / (maxRange - minRange);
+			float fraction = (dist - minRange) / (maxRange - minRange);
 			finalDamage = 1.0 + (maxBonus * fraction);
 		}
 	}
 
+	if (finalDamage <= 1.0)
+		return Plugin_Continue;
+
 	damage = finalDamage;
-	g_bPounceActive[attacker] = false;
 
 	g_bPouncePZMsg[attacker] = true;
 	SendPounceMsg(attacker, victim, RoundToNearest(finalDamage));
@@ -169,9 +168,7 @@ Action OnPZDmgMsg(UserMsg msg_id, BfRead bf, const int[] players, int playersNum
 {
 	int iMsgType = bf.ReadByte();
 	if (iMsgType != 12)
-	{
 		return Plugin_Continue;
-	}
 
 	int attacker = GetClientOfUserId(BfReadShort(bf));
 	if (g_bPouncePZMsg[attacker])
