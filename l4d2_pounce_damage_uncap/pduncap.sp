@@ -11,6 +11,7 @@ ConVar g_hPounceDamage;
 float g_flPounceStart[MAXPLAYERS + 1][3];
 bool g_bPounceActive[MAXPLAYERS + 1];
 bool g_bPouncePZMsg[MAXPLAYERS + 1];
+int g_iPounceDamage[MAXPLAYERS + 1];
 
 public Plugin myinfo =
 {
@@ -31,6 +32,7 @@ public void OnPluginStart()
 
 	HookEvent("ability_use", Event_AbilityUse);
 	HookEvent("player_death", Event_PlayerDeath);
+	HookEvent("lunge_pounce", Event_LungePounce, EventHookMode_Pre);
 	HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
 
 	for (int i = 1; i <= MaxClients; i++)
@@ -90,6 +92,17 @@ void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 		return;
 
 	g_bPounceActive[client] = false;
+}
+
+void Event_LungePounce(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+
+	if (!client)
+		return;
+
+	event.SetInt("damage", g_iPounceDamage[client]);
+	g_iPounceDamage[client] = 0;
 }
 
 void SendPounceMsg(int attacker, int victim, int damage)
@@ -152,13 +165,15 @@ Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, in
 		}
 	}
 
+	g_iPounceDamage[attacker] = RoundToNearest(finalDamage);
+
 	if (finalDamage <= 1.0)
 		return Plugin_Continue;
 
 	damage = finalDamage;
 
 	g_bPouncePZMsg[attacker] = true;
-	SendPounceMsg(attacker, victim, RoundToNearest(finalDamage));
+	SendPounceMsg(attacker, victim, g_iPounceDamage[attacker]);
 	g_bPouncePZMsg[attacker] = false;
 
 	return Plugin_Changed;
