@@ -165,16 +165,15 @@ Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, in
 		}
 	}
 
+	damage = finalDamage;
 	g_iPounceDamage[attacker] = RoundToNearest(finalDamage);
 
-	if (finalDamage <= 1.0)
-		return Plugin_Continue;
-
-	damage = finalDamage;
-
-	g_bPouncePZMsg[attacker] = true;
-	SendPounceMsg(attacker, victim, g_iPounceDamage[attacker]);
-	g_bPouncePZMsg[attacker] = false;
+	if (finalDamage > 1.0)
+	{
+		g_bPouncePZMsg[attacker] = true;
+		SendPounceMsg(attacker, victim, g_iPounceDamage[attacker]);
+		g_bPouncePZMsg[attacker] = false;
+	}
 
 	return Plugin_Changed;
 }
