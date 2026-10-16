@@ -71,7 +71,6 @@ public void OnPluginStart()
 
 	delete hGameConf;
 
-	HookEvent("round_start_pre_entity", Event_round_start_pre_entity, EventHookMode_PostNoCopy);
 	HookEvent("player_hurt", Event_PlayerHurt, EventHookMode_Pre);
 }
 
@@ -98,46 +97,6 @@ MRESReturn SoundChangePitch(Handle hReturn, Handle hParams)
 	}
 	
 	return MRES_Ignored;
-}
-
-// CMoveableCamera::FollowTarget crash fix (by shqke)
-public void OnClientDisconnect(int client)
-{
-    if (!IsClientInGame(client)) {
-        return;
-    }
-    
-    int viewEntity = GetEntPropEnt(client, Prop_Send, "m_hViewEntity");
-    if (!IsValidEdict(viewEntity)) {
-        return;
-    }
-    
-    char cls[64];
-    GetEdictClassname(viewEntity, cls, sizeof(cls));
-    if (strncmp(cls, "point_viewcontrol", 17) == 0) {
-        // Matches CSurvivorCamera, CTriggerCamera
-        if (strcmp(cls[17], "_survivor") == 0 || cls[17] == '\0') {
-            // Disable entity to prevent CMoveableCamera::FollowTarget to cause a crash
-            // m_hTargetEnt EHANDLE is not checked for existence and can be NULL
-            // CBaseEntity::GetAbsAngles being called on causing a crash
-            AcceptEntityInput(viewEntity, "Disable");
-        }
-        
-        // Matches CTriggerCameraMultiplayer
-        if (strcmp(cls[17], "_multiplayer") == 0) {
-            AcceptEntityInput(viewEntity, "RemovePlayer", client);
-        }
-    }
-}
-
-void Event_round_start_pre_entity(Event event, const char[] name, bool dontBroadcast)
-{
-    int entity = INVALID_ENT_REFERENCE;
-    while ((entity = FindEntityByClassname(entity, "point_viewcontrol*")) != INVALID_ENT_REFERENCE) {
-        // Invoke a "Disable" input on camera entities to free all players
-        // Doing so on round_start_pre_entity should help to not let map logic kick in too early
-        AcceptEntityInput(entity, "Disable");
-    }
 }
 
 // AwardTemplate crash fix
