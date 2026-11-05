@@ -24,10 +24,9 @@
 #include <dhooks>
 
 #pragma newdecls required
-#pragma dynamic 16384
 
 #define GAMEDATA "l4fix"
-#define PLUGIN_VERSION	"1.1.1"
+#define PLUGIN_VERSION	"1.2.0"
 
 int g_iWitchHarasser[2049];
 float g_fLastMeleeSwing[33];
@@ -54,16 +53,12 @@ int g_iActiveWeapon = -1;
 int g_iWitchSequence = -1;
 int g_iMaxFlames = -1;
 
-#define IMPACT_SND_INTERVAL 0.1
-
 enum struct ChargerCharge
 {
-	float m_NextImpactSND;
 	bool m_MarkHit[33];
 	
 	void Reset()
 	{
-		this.m_NextImpactSND = 0.0;
 		for (int i = 1; i <= MaxClients; i++)
 		{
 			this.m_MarkHit[i] = false;
@@ -72,7 +67,6 @@ enum struct ChargerCharge
 }
 
 ChargerCharge g_ChargerCharge[33];
-Handle g_hSetAbsVelocity;
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -90,7 +84,7 @@ public Plugin myinfo =
 	author = "Lux, Accelerator",
 	description = "Fixes for gamebreaking bugs and stupid stuff valve did for left 4 dead 2",
 	version = PLUGIN_VERSION,
-	url = "forums.alliedmods.net/showthread.php?p=2647017"
+	url = "https://github.com/accelerator74/sp-plugins"
 };
 
 
@@ -107,7 +101,6 @@ public void OnPluginStart()
 	HookEvent("round_start", eRoundStart, EventHookMode_PostNoCopy);
 	HookEvent("charger_charge_start", eClearMarkedSurvivors, EventHookMode_Pre);
 	HookEvent("charger_charge_end", eClearMarkedSurvivors, EventHookMode_Pre);
-	AddNormalSoundHook(ImpactSNDHook);
 	
 	Handle hGamedata = LoadGameConfigFile(GAMEDATA);
 	if (hGamedata == null)
@@ -128,28 +121,15 @@ public void OnPluginStart()
 	int byte = LoadFromAddress(patch + offset, NumberType_Int8);
 	if (byte == 0x01)
 	{
-		Handle hDetour = DHookCreateFromConf(hGamedata, "ThrowImpactedSurvivor");
+		Handle hDetour = DHookCreateFromConf(hGamedata, "CCharge::HandleCustomCollision");
 		if (!hDetour)
 		{
-			SetFailState("Failed to find 'ThrowImpactedSurvivor' signature");
+			SetFailState("Failed to find 'CCharge::HandleCustomCollision' signature");
 		}
 		
-		StartPrepSDKCall(SDKCall_Entity);
-		if (!PrepSDKCall_SetFromConf(hGamedata, SDKConf_Signature, "CBaseEntity::SetAbsVelocity"))
+		if (!DHookEnableDetour(hDetour, false, CCharge_HandleCustomCollision))
 		{
-			SetFailState("Error finding the 'CBaseEntity::SetAbsVelocity' signature.");
-		}
-		
-		PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_Pointer);
-		g_hSetAbsVelocity = EndPrepSDKCall();
-		if (g_hSetAbsVelocity == null)
-		{
-			SetFailState("Unable to prep SDKCall 'CBaseEntity::SetAbsVelocity'");
-		}
-		
-		if (!DHookEnableDetour(hDetour, false, ThrowImpactedSurvivor))
-		{
-			SetFailState("Failed to detour 'ThrowImpactedSurvivor'");
+			SetFailState("Failed to detour 'CCharge::HandleCustomCollision'");
 		}
 		
 		Collision_Address = patch + offset;
@@ -486,79 +466,26 @@ Action FindDeathSpit(Handle hTimer)
 	return Plugin_Stop;
 }
 
-Action ImpactSNDHook(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &iCharger, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
+MRESReturn CCharge_HandleCustomCollision(int pThis, Handle hReturn, Handle hParams)
 {
-	if (iCharger < 1 || iCharger > MaxClients || !IsClientInGame(iCharger) ||
-		GetClientTeam(iCharger) != 3 || !IsPlayerAlive(iCharger))
-	{
-		return Plugin_Continue;
-	}
-	
-	int iAbility = GetEntPropEnt(iCharger, Prop_Send, "m_customAbility");
-	if (iAbility == -1 || !HasEntProp(iAbility, Prop_Send, "m_isCharging"))
-	{
-		return Plugin_Continue;
-	}
-	
-	if (!GetEntProp(iAbility, Prop_Send, "m_isCharging", 1))
-		return Plugin_Continue;
-	
-	if (g_ChargerCharge[iCharger].m_NextImpactSND > GetGameTime())
-	{
-		if (StrContains(sample, "player/charger/hit/charger_smash_0", false) != -1)
-			return Plugin_Handled;
-	}
-	
-	return Plugin_Continue;
-}
-
-MRESReturn ThrowImpactedSurvivor(Handle hReturn, Handle hParams)
-{
-	int iCharger = DHookGetParam(hParams, 1);
-	int iVictim = DHookGetParam(hParams, 2);
-	bool ShouldDamage = DHookGetParam(hParams, 4);
-	
-	if (!ShouldDamage)
+	int iVictim = DHookGetParam(hParams, 1);
+	if (!iVictim || iVictim > MaxClients || GetClientTeam(iVictim) != 2)
 		return MRES_Ignored;
 	
-	if (iCharger < 1 || iCharger > MaxClients || GetClientTeam(iCharger) != 3 || !IsPlayerAlive(iCharger))
-	{
-		return MRES_Ignored;
-	}
-	
-	int iAbility = GetEntPropEnt(iCharger, Prop_Send, "m_customAbility");
-	if (iAbility == -1 || !HasEntProp(iAbility, Prop_Send, "m_isCharging"))
-	{
-		return MRES_Ignored;
-	}
-	
-	if (!GetEntProp(iAbility, Prop_Send, "m_isCharging", 1))
+	int iCharger = GetEntPropEnt(pThis, Prop_Send, "m_owner");
+	if (iCharger == -1)
 		return MRES_Ignored;
 	
-	int iCarryVictim = GetEntPropEnt(iCharger, Prop_Send, "m_carryVictim");
-	if (iCarryVictim == -1)
-	{
-		DHookSetReturn(hReturn, 1);
-		return MRES_Supercede;
-	}
+	if (!GetEntProp(pThis, Prop_Send, "m_isCharging", 1))
+		return MRES_Ignored;
 	
-	if (iCarryVictim == iVictim)
-	{
-		g_ChargerCharge[iCharger].m_NextImpactSND = GetGameTime() + IMPACT_SND_INTERVAL;
-		DHookSetReturn(hReturn, 1);
-		return MRES_Supercede;
-	}
+	if (GetEntProp(iVictim, Prop_Send, "m_isIncapacitated", 1))
+		return MRES_Ignored;
 	
-	//Set velocity to 0 so impulse velocity does not account for current velocity
-	static float vecNoVel[3] = {0.0, 0.0, 0.0};
-	SDKCall(g_hSetAbsVelocity, iVictim, vecNoVel);
-	
-	g_ChargerCharge[iCharger].m_NextImpactSND = GetGameTime() + IMPACT_SND_INTERVAL;
 	if (g_ChargerCharge[iCharger].m_MarkHit[iVictim])
 	{
-		DHookSetParam(hParams, 4, false);
-		DHookSetReturn(hReturn, 1);
-		return MRES_ChangedHandled;
+		DHookSetReturn(hReturn, 0);
+		return MRES_Supercede;
 	}
 	
 	g_ChargerCharge[iCharger].m_MarkHit[iVictim] = true;
@@ -611,7 +538,7 @@ public void OnPluginEnd()
 		StoreToAddress(Collision_Address, 0x01, NumberType_Int8);
 		PrintToServer("ChargerCollision patch restored 'CCharge::HandleCustomCollision'");
 	}
-	
+
 	if (OnMoveToFailure_1 != 0)
 	{
 		StoreToAddress(OnMoveToFailure_1, MoveFailureBytesStore_1[0], NumberType_Int8);
