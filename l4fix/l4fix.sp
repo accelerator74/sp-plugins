@@ -26,9 +26,10 @@
 #pragma newdecls required
 
 #define GAMEDATA "l4fix"
-#define PLUGIN_VERSION	"1.2.0"
+#define PLUGIN_VERSION	"1.3.0"
 
 int g_iWitchHarasser[2049];
+int g_iMaxHealth[33];
 float g_fLastMeleeSwing[33];
 float g_fNextAttack[33];
 
@@ -101,6 +102,7 @@ public void OnPluginStart()
 	HookEvent("round_start", eRoundStart, EventHookMode_PostNoCopy);
 	HookEvent("charger_charge_start", eClearMarkedSurvivors, EventHookMode_Pre);
 	HookEvent("charger_charge_end", eClearMarkedSurvivors, EventHookMode_Pre);
+	HookEvent("adrenaline_used", eResetMaxHealth, EventHookMode_Pre);
 	
 	Handle hGamedata = LoadGameConfigFile(GAMEDATA);
 	if (hGamedata == null)
@@ -109,6 +111,18 @@ public void OnPluginStart()
 	g_iMaxFlames = GameConfGetOffset(hGamedata, "CInferno::m_maxFlames");
 	if (g_iMaxFlames == -1)
 		SetFailState("Invalid offset for 'CInferno::m_maxFlames'.");
+	
+	Handle hDetour = DHookCreateFromConf(hGamedata, "CTerrorPlayer::OnAdrenalineUsed");
+	if (!hDetour)
+	{
+		SetFailState("Failed to find 'CTerrorPlayer::OnAdrenalineUsed' signature");
+	}
+	
+	if (!DHookEnableDetour(hDetour, false, CTerrorPlayer_OnAdrenalineUsed))
+	{
+		SetFailState("Failed to detour 'CTerrorPlayer::OnAdrenalineUsed'");
+	}
+	delete hDetour;
 	
 	Address patch = GameConfGetAddress(hGamedata, "CCharge::HandleCustomCollision");
 	if (!patch)
@@ -121,7 +135,7 @@ public void OnPluginStart()
 	int byte = LoadFromAddress(patch + offset, NumberType_Int8);
 	if (byte == 0x01)
 	{
-		Handle hDetour = DHookCreateFromConf(hGamedata, "CCharge::HandleCustomCollision");
+		hDetour = DHookCreateFromConf(hGamedata, "CCharge::HandleCustomCollision");
 		if (!hDetour)
 		{
 			SetFailState("Failed to find 'CCharge::HandleCustomCollision' signature");
@@ -379,6 +393,17 @@ void eClearMarkedSurvivors(Event hEvent, const char[] sEventName, bool bDontBroa
 	}
 }
 
+void eResetMaxHealth(Event hEvent, const char[] sEventName, bool bDontBroadcast)
+{
+	int client = GetClientOfUserId(hEvent.GetInt("userid"));
+
+	if (!client || !g_iMaxHealth[client])
+		return;
+
+	SetEntProp(client, Prop_Send, "m_iMaxHealth", g_iMaxHealth[client]);
+	g_iMaxHealth[client] = 0;
+}
+
 void OnSpawnPost(int client)
 {
 	g_ChargerCharge[client].Reset();
@@ -419,6 +444,20 @@ void OnWitchThink(int iWitch)
 			}
 		}
 	}
+}
+
+int GetTempHealth(int client)
+{
+	static ConVar painPillsDecayCvar = null;
+
+	if (painPillsDecayCvar == null)
+	{
+		painPillsDecayCvar = FindConVar("pain_pills_decay_rate");
+	}
+
+	int tempHealth = RoundToCeil(GetEntPropFloat(client, Prop_Send, "m_healthBuffer") - ((GetGameTime() - GetEntPropFloat(client, Prop_Send, "m_healthBufferTime")) * painPillsDecayCvar.FloatValue)) - 1;
+
+	return tempHealth < 0 ? 0 : tempHealth;
 }
 
 Action OnWitchDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3])
@@ -464,6 +503,23 @@ Action FindDeathSpit(Handle hTimer)
 	}
 
 	return Plugin_Stop;
+}
+
+MRESReturn CTerrorPlayer_OnAdrenalineUsed(int pThis, Handle hReturn, Handle hParams)
+{
+	int iTotalHealth = GetClientHealth(pThis) + GetTempHealth(pThis);
+	g_iMaxHealth[pThis] = GetEntProp(pThis, Prop_Send, "m_iMaxHealth");
+	
+	if (iTotalHealth > g_iMaxHealth[pThis])
+	{
+		SetEntProp(pThis, Prop_Send, "m_iMaxHealth", iTotalHealth);
+	}
+	else
+	{
+		g_iMaxHealth[pThis] = 0;
+	}
+	
+	return MRES_Ignored;
 }
 
 MRESReturn CCharge_HandleCustomCollision(int pThis, Handle hReturn, Handle hParams)

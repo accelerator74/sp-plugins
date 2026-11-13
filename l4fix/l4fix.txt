@@ -101,6 +101,20 @@
 					}
 				}
 			}
+			"CTerrorPlayer::OnAdrenalineUsed"
+			{
+				"signature"		"CTerrorPlayer::OnAdrenalineUsed"
+				"callconv"		"thiscall"
+				"return"		"void"
+				"this"			"entity"
+				"arguments"
+				{
+					"duration"
+					{
+						"type" "float"
+					}
+				}
+			}
 		}
 		"Signatures"
 		{
@@ -124,6 +138,14 @@
 				"linux"			"@_ZN7CCharge21HandleCustomCollisionEP11CBaseEntityRK6VectorS4_P10CGameTraceP9CMoveData"
 				"windows"		"\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x33\x2A\x89\x2A\x2A\x8B\x2A\x2A\x53\x8B\x2A\x89\x2A\x2A\x8B\x2A\x2A\x2A\x2A\x2A\x56\x8B"
 								/* ? ? ? ? ? ? ? ? ? ? ? ? ? ? 33 ? 89 ? ? 8B ? ? 53 8B ? 89 ? ? 8B ? ? ? ? ? 56 8B */
+			}
+			"CTerrorPlayer::OnAdrenalineUsed"
+			{
+				"library"	"server"
+				"linux"		"@_ZN13CTerrorPlayer16OnAdrenalineUsedEf"
+				"windows"	"\x55\x8B\x2A\x51\x53\x56\x8B\x2A\x8D\x2A\x2A\x2A\x2A\x2A\x57\x8B\x2A\xE8"
+				/* 55 8B ? 51 53 56 8B ? 8D ? ? ? ? ? 57 8B ? E8 */
+				/* Search: "%s used adrenaline\n" call is 3rd above, match to Linux. */
 			}
 			"WitchAttack::OnMoveToFailure"
 			{
